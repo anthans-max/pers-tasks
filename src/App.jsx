@@ -54,45 +54,42 @@ const Ico = ({ d, size=16, color=T.textSoft, style={} }) => (
 );
 
 const DEFAULT_PROJECTS = [
-  {id:"inbox",name:"Inbox",color:T.gold},{id:"p1",name:"Subscriptions",color:"#f59e0b"},
-  {id:"p2",name:"Home Improvements",color:"#60a5fa"},{id:"p3",name:"Charity",color:"#a78bfa"},
-];
-const DEFAULT_SECTIONS = [
-  {id:"s0",projectId:"inbox",name:"(No Section)"},{id:"s1",projectId:"inbox",name:"Lotus AI Lab"},
-  {id:"s2",projectId:"inbox",name:"Sunder Med / Personal"},{id:"s3",projectId:"inbox",name:"Personal"},
-  {id:"s4",projectId:"inbox",name:"AaraSaan Consulting"},
+  {id:"lotus",name:"Lotus AI Lab",color:"#60a5fa"},
+  {id:"sundermed",name:"Sunder Med/Personal",color:"#f59e0b"},
+  {id:"personal",name:"Personal",color:"#34d399"},
+  {id:"aarasaan",name:"AaraSaan Consulting",color:"#a78bfa"},
 ];
 const DEFAULT_TASKS = [
-  {id:"t1",sectionId:"s0",projectId:"inbox",title:"Karla bills",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t2",sectionId:"s0",projectId:"inbox",title:"Reset ADP payroll",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t3",sectionId:"s0",projectId:"inbox",title:"Personal taxes",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t4",sectionId:"s1",projectId:"inbox",title:"Business development",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t5",sectionId:"s1",projectId:"inbox",title:"Print certificate for wish raffle",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t6",sectionId:"s1",projectId:"inbox",title:"Networking opportunities",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t7",sectionId:"s1",projectId:"inbox",title:"Headhunter",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t8",sectionId:"s1",projectId:"inbox",title:"Lead generation app",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t9",sectionId:"s1",projectId:"inbox",title:"Mark Howarth",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t10",sectionId:"s1",projectId:"inbox",title:"Disc profile assessment",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t11",sectionId:"s1",projectId:"inbox",title:"Open claw",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t12",sectionId:"s1",projectId:"inbox",title:"Wayne Garb",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t13",sectionId:"s1",projectId:"inbox",title:"Lotus Links backlog",priority:4,dueDate:"",subtasks:1,subtasksDone:0,completed:false,fromEmail:false},
-  {id:"t14",sectionId:"s1",projectId:"inbox",title:"Cursor",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t15",sectionId:"s2",projectId:"inbox",title:"Cancel LinkedIn Premium",priority:1,dueDate:"2026-04-23",completed:false,fromEmail:false},
-  {id:"t16",sectionId:"s2",projectId:"inbox",title:"Call DEA",priority:1,dueDate:"",subtasks:1,subtasksDone:0,completed:false,fromEmail:false},
-  {id:"t17",sectionId:"s2",projectId:"inbox",title:"Transfer funds from pension to IRA",priority:1,dueDate:"2025-08-31",completed:false,fromEmail:false},
-  {id:"t18",sectionId:"s2",projectId:"inbox",title:"LCMG statement of info",priority:2,dueDate:"2026-03-31",recurring:true,completed:false,fromEmail:false},
-  {id:"t19",sectionId:"s2",projectId:"inbox",title:"Sunder Med statement of info",priority:2,dueDate:"2026-10-31",recurring:true,completed:false,fromEmail:false},
-  {id:"t20",sectionId:"s2",projectId:"inbox",title:"Peacock statement of information",priority:2,dueDate:"2027-05-31",completed:false,fromEmail:false},
-  {id:"t21",sectionId:"s2",projectId:"inbox",title:"Website for peacock",priority:1,dueDate:"",completed:false,fromEmail:false},
-  {id:"t22",sectionId:"s2",projectId:"inbox",title:"Sunder Medical Month-end",priority:4,dueDate:"2026-04-01",recurring:true,subtasks:5,subtasksDone:5,completed:false,fromEmail:false},
-  {id:"t23",sectionId:"s2",projectId:"inbox",title:"Southwest refund for mom",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t24",sectionId:"s3",projectId:"inbox",title:"Call SRF re app",priority:2,dueDate:"",completed:false,fromEmail:false},
-  {id:"t25",sectionId:"s3",projectId:"inbox",title:"SimpliSafe - reduce plan",priority:4,dueDate:"2026-09-06",completed:false,fromEmail:false},
-  {id:"t26",sectionId:"s3",projectId:"inbox",title:"Refinance auto loan",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t27",sectionId:"s3",projectId:"inbox",title:"Create social security account on ssa.gov",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t28",sectionId:"s3",projectId:"inbox",title:"Lincoln Roadside Assistance",priority:4,dueDate:"",completed:false,fromEmail:false},
-  {id:"t29",sectionId:"s4",projectId:"inbox",title:"Amazon jobs site",priority:1,dueDate:"",completed:false,fromEmail:false},
-  {id:"t30",sectionId:"s4",projectId:"inbox",title:"Statement of incorporation for AaraSaan",priority:2,dueDate:"2026-11-30",recurring:true,completed:false,fromEmail:false},
+  {id:"t1",projectId:"personal",title:"Karla bills",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t2",projectId:"sundermed",title:"Reset ADP payroll",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t3",projectId:"personal",title:"Personal taxes",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t4",projectId:"lotus",title:"Business development",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t5",projectId:"lotus",title:"Print certificate for wish raffle",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t6",projectId:"lotus",title:"Networking opportunities",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t7",projectId:"lotus",title:"Headhunter",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t8",projectId:"lotus",title:"Lead generation app",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t9",projectId:"lotus",title:"Mark Howarth",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t10",projectId:"lotus",title:"Disc profile assessment",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t11",projectId:"lotus",title:"Open claw",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t12",projectId:"lotus",title:"Wayne Garb",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t13",projectId:"lotus",title:"Lotus Links backlog",priority:4,dueDate:"",subtasks:1,subtasksDone:0,completed:false,fromEmail:false},
+  {id:"t14",projectId:"lotus",title:"Cursor",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t15",projectId:"sundermed",title:"Cancel LinkedIn Premium",priority:1,dueDate:"2026-04-23",completed:false,fromEmail:false},
+  {id:"t16",projectId:"sundermed",title:"Call DEA",priority:1,dueDate:"",subtasks:1,subtasksDone:0,completed:false,fromEmail:false},
+  {id:"t17",projectId:"sundermed",title:"Transfer funds from pension to IRA",priority:1,dueDate:"2025-08-31",completed:false,fromEmail:false},
+  {id:"t18",projectId:"sundermed",title:"LCMG statement of info",priority:2,dueDate:"2026-03-31",recurring:true,completed:false,fromEmail:false},
+  {id:"t19",projectId:"sundermed",title:"Sunder Med statement of info",priority:2,dueDate:"2026-10-31",recurring:true,completed:false,fromEmail:false},
+  {id:"t20",projectId:"sundermed",title:"Peacock statement of information",priority:2,dueDate:"2027-05-31",completed:false,fromEmail:false},
+  {id:"t21",projectId:"sundermed",title:"Website for peacock",priority:1,dueDate:"",completed:false,fromEmail:false},
+  {id:"t22",projectId:"sundermed",title:"Sunder Medical Month-end",priority:4,dueDate:"2026-04-01",recurring:true,subtasks:5,subtasksDone:5,completed:false,fromEmail:false},
+  {id:"t23",projectId:"sundermed",title:"Southwest refund for mom",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t24",projectId:"personal",title:"Call SRF re app",priority:2,dueDate:"",completed:false,fromEmail:false},
+  {id:"t25",projectId:"personal",title:"SimpliSafe - reduce plan",priority:4,dueDate:"2026-09-06",completed:false,fromEmail:false},
+  {id:"t26",projectId:"personal",title:"Refinance auto loan",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t27",projectId:"personal",title:"Create social security account on ssa.gov",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t28",projectId:"personal",title:"Lincoln Roadside Assistance",priority:4,dueDate:"",completed:false,fromEmail:false},
+  {id:"t29",projectId:"aarasaan",title:"Amazon jobs site",priority:1,dueDate:"",completed:false,fromEmail:false},
+  {id:"t30",projectId:"aarasaan",title:"Statement of incorporation for AaraSaan",priority:2,dueDate:"2026-11-30",recurring:true,completed:false,fromEmail:false},
 ];
 const DEFAULT_EMAIL_TASKS = [
   {id:"e1",title:"Check First American Title questionnaire from akay@firstam.com",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:2,dueDate:"2026-04-02",captured:"2026-03-29"},
@@ -116,7 +113,6 @@ const useIsMobile = () => {
 // ─────────────────────────────────────────────────────────────
 export default function App() {
   const [projects, setProjects] = useState(() => load("tm_projects", DEFAULT_PROJECTS));
-  const [sections, setSections] = useState(() => load("tm_sections", DEFAULT_SECTIONS));
   const [tasks, setTasks] = useState(() => load("tm_tasks", DEFAULT_TASKS));
   const [emailTasks, setEmailTasks] = useState(() => load("tm_email", DEFAULT_EMAIL_TASKS));
   const [view, setView] = useState("tasks");
@@ -127,17 +123,14 @@ export default function App() {
   const [newTitle, setNewTitle] = useState("");
   const [newPrio, setNewPrio] = useState(4);
   const [newDate, setNewDate] = useState("");
-  const [newSection, setNewSection] = useState("s0");
-  const [newProject, setNewProject] = useState("inbox");
+  const [newProject, setNewProject] = useState("lotus");
   const [assigningEmail, setAssigningEmail] = useState(null);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return {year:d.getFullYear(), month:d.getMonth()}; });
   const [showProjectModal, setShowProjectModal] = useState(false);
-  const [showSectionModal, setShowSectionModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const isMobile = useIsMobile();
 
   useEffect(() => { save("tm_projects", projects); }, [projects]);
-  useEffect(() => { save("tm_sections", sections); }, [sections]);
   useEffect(() => { save("tm_tasks", tasks); }, [tasks]);
   useEffect(() => { save("tm_email", emailTasks); }, [emailTasks]);
 
@@ -181,29 +174,22 @@ export default function App() {
   // Handlers
   const addTask = () => {
     if (!newTitle.trim()) return;
-    setTasks(p=>[...p,{id:uid(),sectionId:newSection,projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:newDate,subtasks:0,subtasksDone:0,completed:false,fromEmail:false}]);
+    setTasks(p=>[...p,{id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:newDate,subtasks:0,subtasksDone:0,completed:false,fromEmail:false}]);
     setNewTitle(""); setNewPrio(4); setNewDate(""); setAddModal(false);
   };
   const toggleDone = (id) => { setTasks(p=>p.map(t=>t.id===id?{...t,completed:!t.completed}:t)); if(selectedTask?.id===id) setSelectedTask(null); };
   const deleteTask = (id) => { setTasks(p=>p.filter(t=>t.id!==id)); if(selectedTask?.id===id) setSelectedTask(null); };
   const updateTask = (id,u) => { setTasks(p=>p.map(t=>t.id===id?{...t,...u}:t)); if(selectedTask?.id===id) setSelectedTask(p=>({...p,...u})); };
-  const assignEmail = (eid,secId,projId) => {
+  const assignEmail = (eid,projId) => {
     const et = emailTasks.find(e=>e.id===eid); if(!et) return;
-    setTasks(p=>[...p,{id:uid(),sectionId:secId,projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom}]);
+    setTasks(p=>[...p,{id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom}]);
     setEmailTasks(p=>p.filter(e=>e.id!==eid)); setAssigningEmail(null);
   };
   const addProject = () => {
     if(!modalName.trim()) return;
     const id=uid();
     setProjects(p=>[...p,{id,name:modalName.trim(),color:T.gold}]);
-    setSections(p=>[...p,{id:uid(),projectId:id,name:"(No Section)"}]);
     setModalName(""); setShowProjectModal(false);
-  };
-  const addSection = () => {
-    if(!modalName.trim()) return;
-    const projId = projectFilter==="all"?"inbox":projectFilter;
-    setSections(p=>[...p,{id:uid(),projectId:projId,name:modalName.trim()}]);
-    setModalName(""); setShowSectionModal(false);
   };
 
   // ── Shared Components ────────────────────────────────────────
@@ -257,18 +243,30 @@ export default function App() {
         </div>):visTasks.map(t=><TaskCard key={t.id} task={t}/>)}
       </div>
     );
-    const projSecs = projectFilter==="all" ? sections : sections.filter(s=>s.projectId===projectFilter);
+    if (projectFilter !== "all") return (
+      <div style={{padding:"0 0 8px"}}>
+        {isEmpty?(<div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
+          <div style={{fontSize:32,marginBottom:12}}>✓</div>
+          <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All clear</div>
+          <div style={{fontSize:13,marginTop:4}}>No tasks in this project</div>
+        </div>):visTasks.map(t=><TaskCard key={t.id} task={t}/>)}
+      </div>
+    );
     return (
       <div>
-        {projSecs.map(sec=>{
-          const secTasks=visTasks.filter(t=>t.sectionId===sec.id);
+        {projects.map(proj=>{
+          const projTasks=visTasks.filter(t=>t.projectId===proj.id);
+          if (!projTasks.length) return null;
           return (
-            <div key={sec.id}>
+            <div key={proj.id}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 0 6px"}}>
-                <span style={{fontSize:10,fontWeight:700,letterSpacing:"1.8px",textTransform:"uppercase",color:"rgba(253,181,21,0.38)"}}>{sec.name}</span>
-                <span style={{fontSize:11,color:T.textMute,background:"rgba(255,255,255,0.05)",padding:"1px 8px",borderRadius:8}}>{secTasks.length}</span>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{width:7,height:7,borderRadius:"50%",background:proj.color||T.gold}}/>
+                  <span style={{fontSize:10,fontWeight:700,letterSpacing:"1.8px",textTransform:"uppercase",color:"rgba(253,181,21,0.38)"}}>{proj.name}</span>
+                </div>
+                <span style={{fontSize:11,color:T.textMute,background:"rgba(255,255,255,0.05)",padding:"1px 8px",borderRadius:8}}>{projTasks.length}</span>
               </div>
-              {secTasks.map(t=><TaskCard key={t.id} task={t}/>)}
+              {projTasks.map(t=><TaskCard key={t.id} task={t}/>)}
             </div>
           );
         })}
@@ -431,12 +429,11 @@ export default function App() {
             {isMobile&&<div style={{width:36,height:4,borderRadius:2,background:T.borderS,margin:"0 auto 20px"}}/>}
             <h3 style={{margin:"0 0 20px",fontSize:18,fontWeight:700,fontFamily:"'Playfair Display',serif",color:T.gold}}>New Task</h3>
             <input autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addTask();if(e.key==="Escape")setAddModal(false);}} placeholder="Task name..." style={{...inp,fontSize:15,padding:"12px 16px",marginBottom:14}}/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
               {[
                 {label:"Priority",content:<select value={newPrio} onChange={e=>setNewPrio(Number(e.target.value))} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
                 {label:"Due Date",content:<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/>},
-                {label:"Project",content:<select value={newProject} onChange={e=>{setNewProject(e.target.value);setNewSection(sections.find(s=>s.projectId===e.target.value)?.id||"s0");}} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
-                {label:"Section",content:<select value={newSection} onChange={e=>setNewSection(e.target.value)} style={inp}>{sections.filter(s=>s.projectId===newProject).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>},
+                {label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
               ].map(({label,content})=>(
                 <div key={label}>
                   <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>
@@ -466,12 +463,11 @@ export default function App() {
               </div>
             </div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,color:T.text,lineHeight:1.35,marginBottom:18}}>{selectedTask.title}</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
               {[
                 {label:"Due Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>},
                 {label:"Priority",content:<select value={selectedTask.priority} onChange={e=>updateTask(selectedTask.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                {label:"Section",content:<select value={selectedTask.sectionId} onChange={e=>updateTask(selectedTask.id,{sectionId:e.target.value})} style={inp}>{sections.filter(s=>s.projectId===selectedTask.projectId).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>},
-                {label:"Project",content:<select value={selectedTask.projectId} onChange={e=>{const fs=sections.find(s=>s.projectId===e.target.value);updateTask(selectedTask.id,{projectId:e.target.value,sectionId:fs?.id||"s0"});}} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+                {label:"Project",content:<select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
               ].map(({label,content})=>(
                 <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
               ))}
@@ -484,19 +480,17 @@ export default function App() {
       {assigningEmail&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setAssigningEmail(null)}>
           <div style={{background:T.modal,borderRadius:16,border:`1px solid ${T.goldB}`,padding:24,width:400,maxWidth:"90vw",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-            <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:700,fontFamily:"'Playfair Display',serif",color:T.gold}}>Assign to Section</h3>
+            <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:700,fontFamily:"'Playfair Display',serif",color:T.gold}}>Assign to Project</h3>
             <p style={{margin:"0 0 16px",fontSize:13,color:T.textMute}}>Choose where to move this task</p>
             {projects.map(proj=>(
-              <div key={proj.id}>
-                <div style={{fontSize:10,fontWeight:700,color:T.textMute,padding:"8px 10px 4px",textTransform:"uppercase",letterSpacing:0.5}}>{proj.name}</div>
-                {sections.filter(s=>s.projectId===proj.id).map(sec=>(
-                  <button key={sec.id} onClick={()=>assignEmail(assigningEmail,sec.id,proj.id)}
-                    style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:"transparent",border:"none",color:T.text,cursor:"pointer",borderRadius:8,fontSize:13,textAlign:"left"}}
-                    onMouseEnter={e=>e.currentTarget.style.background="rgba(0,50,98,0.4)"}
-                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                  ><Ico d={I.arrow} size={14} color={T.gold}/> {sec.name}</button>
-                ))}
-              </div>
+              <button key={proj.id} onClick={()=>assignEmail(assigningEmail,proj.id)}
+                style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:"transparent",border:"none",color:T.text,cursor:"pointer",borderRadius:8,fontSize:13,textAlign:"left"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(0,50,98,0.4)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+              >
+                <div style={{width:8,height:8,borderRadius:"50%",background:proj.color||T.gold,flexShrink:0}}/>
+                {proj.name}
+              </button>
             ))}
             <div style={{marginTop:14,display:"flex",justifyContent:"flex-end"}}><button onClick={()=>setAssigningEmail(null)} style={{padding:"8px 16px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:13}}>Cancel</button></div>
           </div>
@@ -504,7 +498,6 @@ export default function App() {
       )}
 
       {showProjectModal&&<NameModal title="New Project" onSave={addProject} onClose={()=>setShowProjectModal(false)}/>}
-      {showSectionModal&&<NameModal title="New Section" onSave={addSection} onClose={()=>setShowSectionModal(false)}/>}
     </>
   );
 
@@ -519,7 +512,7 @@ export default function App() {
             <div style={{fontSize:11,color:T.textMute}}>Task Manager</div>
           </div>
         </div>
-        <button onClick={()=>{setNewProject(projectFilter==="all"?"inbox":projectFilter);setNewSection(sections.find(s=>s.projectId===(projectFilter==="all"?"inbox":projectFilter))?.id||"s0");setAddModal(true);}}
+        <button onClick={()=>{setNewProject(projectFilter==="all"?projects[0]?.id:projectFilter);setAddModal(true);}}
           style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 14px",background:T.goldS,border:`1px solid ${T.goldB}`,borderRadius:10,color:T.gold,fontSize:13,fontWeight:600,cursor:"pointer"}}>
           <div style={{width:20,height:20,borderRadius:"50%",background:T.gold,color:T.bg2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,flexShrink:0}}>+</div>
           Add task
@@ -573,7 +566,6 @@ export default function App() {
         <button title="Settings" style={{flex:1,padding:8,borderRadius:8,background:"rgba(255,255,255,0.04)",border:`1px solid ${T.borderS}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <Ico d={I.settings} size={15} color={T.textMute}/>
         </button>
-        <button onClick={()=>{setModalName("");setShowSectionModal(true);}} style={{flex:2,padding:"8px 12px",borderRadius:8,background:T.goldS,border:`1px solid ${T.goldB}`,color:T.gold,cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add section</button>
       </div>
     </div>
   );
@@ -601,8 +593,7 @@ export default function App() {
           {[
             {label:"Due Date",content:<input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/>},
             {label:"Priority",content:<select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-            {label:"Section",content:<select value={task.sectionId} onChange={e=>updateTask(task.id,{sectionId:e.target.value})} style={inp}>{sections.filter(s=>s.projectId===task.projectId).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>},
-            {label:"Project",content:<select value={task.projectId} onChange={e=>{const fs=sections.find(s=>s.projectId===e.target.value);updateTask(task.id,{projectId:e.target.value,sectionId:fs?.id||"s0"});}} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+            {label:"Project",content:<select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
           ].map(({label,content})=>(
             <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
           ))}
@@ -632,7 +623,6 @@ export default function App() {
             <Ico d={I.search} size={14} color={T.textMute}/>
             <span style={{fontSize:12,color:T.textMute}}>Search tasks…</span>
           </div>
-          {(view==="tasks"||view==="today")&&<button onClick={()=>{setModalName("");setShowSectionModal(true);}} style={{padding:"7px 14px",background:T.goldS,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:600}}>+ Add section</button>}
         </div>
       </div>
     );
