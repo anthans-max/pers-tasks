@@ -350,7 +350,7 @@ export default function App() {
   const PoweredFooter = () => (
     <div style={{position:"fixed",bottom:0,left:0,right:0,height:36,zIndex:490,background:T.footerBg,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
       <img src="/lotus-logo.png" alt="Lotus" style={{height:20,width:"auto"}}/>
-      <span style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.28em",textTransform:"uppercase",color:"rgba(255,255,255,0.45)"}}>Powered by Lotus AI</span>
+      <a href="https://getlotusai.com" target="_blank" rel="noopener noreferrer" style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.28em",textTransform:"uppercase",color:"rgba(255,255,255,0.45)",textDecoration:"none"}}>Powered by Lotus AI</a>
     </div>
   );
 
