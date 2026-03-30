@@ -154,6 +154,9 @@ export default function App() {
   const [selectedEmails, setSelectedEmails] = useState(new Set());
   const [batchProject, setBatchProject] = useState("lotus");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return {year:d.getFullYear(), month:d.getMonth()}; });
+  const [gcalEvents, setGcalEvents] = useState([]);
+  const [gcalVisible, setGcalVisible] = useState(true);
+  const [gcalLastSync, setGcalLastSync] = useState(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const isMobile = useIsMobile();
@@ -182,6 +185,19 @@ export default function App() {
       })));
     });
   }, []);
+
+  useEffect(() => {
+    if (view !== "calendar") return;
+    const month = `${calMonth.year}-${String(calMonth.month+1).padStart(2,"0")}`;
+    fetch(`/api/gcal/events?month=${month}`)
+      .then(r => r.json())
+      .then(({ events=[], lastFetch, warning }) => {
+        if (warning) console.warn("[gcal]", warning);
+        setGcalEvents(events);
+        if (lastFetch) setGcalLastSync(lastFetch);
+      })
+      .catch(() => setGcalEvents([]));
+  }, [view, calMonth]);
 
   const TODAY = useMemo(() => todayStr(), []);
 
@@ -214,16 +230,21 @@ export default function App() {
     const {year,month} = calMonth;
     const daysInMonth = new Date(year,month+1,0).getDate();
     const startPad = new Date(year,month,1).getDay();
-    const all = [...tasks.filter(t=>!t.completed&&t.dueDate), ...emailTasks.filter(e=>e.dueDate).map(e=>({...e,_email:true}))];
+    const all = [
+      ...tasks.filter(t=>!t.completed&&t.dueDate),
+      ...emailTasks.filter(e=>e.dueDate).map(e=>({...e,_email:true})),
+      ...(gcalVisible ? gcalEvents.filter(e=>e.date).map(e=>({...e,_gcal:true,dueDate:e.date})) : []),
+    ];
     const byDate = {};
     all.forEach(t => {
+      if (!t.dueDate) return;
       const d = new Date(t.dueDate+"T00:00:00");
       if (d.getFullYear()===year&&d.getMonth()===month) {
         const k = d.getDate(); if(!byDate[k]) byDate[k]=[]; byDate[k].push(t);
       }
     });
     return {daysInMonth,startPad,byDate};
-  }, [calMonth,tasks,emailTasks]);
+  }, [calMonth,tasks,emailTasks,gcalEvents,gcalVisible]);
 
   // Handlers
   const addTask = () => {
@@ -478,14 +499,31 @@ export default function App() {
     const tD=now.getDate(),tM=now.getMonth(),tY=now.getFullYear();
     const cells=[...Array(startPad).fill(null),...Array.from({length:daysInMonth},(_,i)=>i+1)];
     while(cells.length%7!==0) cells.push(null);
+    const gcalPill = (t) => {
+      const lower=(t.title||"").toLowerCase();
+      if(lower.includes("birthday")||lower.includes("anniversary")) return {bg:"rgba(181,135,26,0.15)",c:"#8A6310",b:"rgba(181,135,26,0.5)"};
+      if(t.calendarSource==="shared") return {bg:"rgba(123,111,170,0.15)",c:"#4A3F80",b:"rgba(123,111,170,0.5)"};
+      return {bg:"rgba(74,124,111,0.15)",c:"#2A5E54",b:"rgba(74,124,111,0.5)"};
+    };
     return (
       <div style={{padding:`16px ${padH}px`}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:gcalVisible&&gcalLastSync?8:16,flexWrap:"wrap"}}>
           <button onClick={()=>setCalMonth(p=>p.month===0?{year:p.year-1,month:11}:{...p,month:p.month-1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevL} size={16} color={T.textSoft}/></button>
           <div style={{flex:1,textAlign:"center",fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:400,color:T.gold}}>{MONTHS[month]} {year}</div>
           <button onClick={()=>setCalMonth(p=>p.month===11?{year:p.year+1,month:0}:{...p,month:p.month+1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevR} size={16} color={T.textSoft}/></button>
           <button onClick={()=>setCalMonth({year:tY,month:tM})} style={{padding:"6px 12px",background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,color:T.textSoft,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400}}>Today</button>
+          <button onClick={()=>setGcalVisible(p=>!p)} title={gcalVisible?"Hide Google Calendar events":"Show Google Calendar events"}
+            style={{padding:"6px 10px",background:gcalVisible?"rgba(74,124,111,0.15)":"rgba(44,40,32,0.06)",border:`1px solid ${gcalVisible?"rgba(74,124,111,0.45)":T.borderS}`,color:gcalVisible?"#2A5E54":T.textMute,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400,display:"flex",alignItems:"center",gap:5}}>
+            <Ico d={I.recur} size={12} color={gcalVisible?"#2A5E54":T.textMute}/>
+            GCal
+          </button>
         </div>
+        {gcalVisible&&gcalLastSync&&(
+          <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:10,fontSize:10,color:T.textMute}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:"#4A7C6F",display:"inline-block",flexShrink:0}}/>
+            Synced {new Date(gcalLastSync).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+          </div>
+        )}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,marginBottom:2}}>
           {DAYS.map(d=><div key={d} style={{padding:"6px 0",fontSize:10,fontWeight:700,color:T.textMute,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>{d}</div>)}
         </div>
@@ -501,19 +539,25 @@ export default function App() {
                   <div style={{fontSize:12,fontWeight:isT?800:600,color:isT?T.gold:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
                     {isT&&<span style={{width:5,height:5,borderRadius:"50%",background:T.gold,display:"inline-block"}}/>}{day}
                   </div>
-                  {dt.slice(0,maxShow).map((t,ti)=>(
-                    <div key={ti} title={t.title} onClick={()=>t.sectionId&&setSelectedTask(t)}
-                      style={{fontSize:10,padding:"2px 5px",borderRadius:3,marginBottom:2,background:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",color:t._email?T.email:PC[t.priority]||T.textMute,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${t._email?T.email:PC[t.priority]||T.textMute}`,cursor:t.sectionId?"pointer":"default"}}
-                    >{t.title}</div>
-                  ))}
+                  {dt.slice(0,maxShow).map((t,ti)=>{
+                    const p=t._gcal?gcalPill(t):{bg:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",c:t._email?T.email:PC[t.priority]||T.textMute,b:t._email?T.email:PC[t.priority]||T.textMute};
+                    return (
+                      <div key={ti} title={t.title} onClick={()=>!t._gcal&&t.sectionId&&setSelectedTask(t)}
+                        style={{fontSize:10,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,cursor:!t._gcal&&t.sectionId?"pointer":"default"}}
+                      >{t.title}</div>
+                    );
+                  })}
                   {dt.length>maxShow&&<div style={{fontSize:9,color:T.textMute,padding:"1px 5px"}}>+{dt.length-maxShow} more</div>}
                 </>}
               </div>
             );
           })}
         </div>
-        <div style={{display:"flex",gap:16,marginTop:14,paddingTop:12,borderTop:`1px solid ${T.borderS}`,flexWrap:"wrap"}}>
-          {[{l:"Urgent",c:PC[1],b:PG[1]},{l:"High",c:PC[2],b:PG[2]},{l:"Medium",c:PC[3],b:PG[3]},{l:"Email",c:T.email,b:T.emailS}].map(x=>(
+        <div style={{display:"flex",gap:12,marginTop:14,paddingTop:12,borderTop:`1px solid ${T.borderS}`,flexWrap:"wrap"}}>
+          {[
+            {l:"Urgent",c:PC[1],b:PG[1]},{l:"High",c:PC[2],b:PG[2]},{l:"Medium",c:PC[3],b:PG[3]},{l:"Email",c:T.email,b:T.emailS},
+            ...(gcalVisible?[{l:"GCal",c:"#2A5E54",b:"rgba(74,124,111,0.15)"},{l:"Shared",c:"#4A3F80",b:"rgba(123,111,170,0.15)"},{l:"Birthday",c:"#8A6310",b:"rgba(181,135,26,0.15)"}]:[]),
+          ].map(x=>(
             <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.textSoft}}>
               <span style={{width:10,height:10,borderRadius:3,background:x.b,border:`2px solid ${x.c}`}}/>{x.l}
             </div>
