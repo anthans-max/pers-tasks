@@ -16,10 +16,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 // ─── Source data (copied from App.jsx) ───────────────────────────────────────
 
 const DEFAULT_PROJECTS = [
-  { id: "lotus",     name: "Lotus AI Lab",          color: "#60a5fa" },
-  { id: "sundermed", name: "Sunder Med/Personal",   color: "#f59e0b" },
-  { id: "personal",  name: "Personal",               color: "#34d399" },
-  { id: "aarasaan",  name: "AaraSaan Consulting",    color: "#a78bfa" },
+  { id: "lotus",     name: "Lotus AI Lab",          color: "#4A7C6F" },
+  { id: "sundermed", name: "Sunder Med/Personal",   color: "#B5871A" },
+  { id: "personal",  name: "Personal",               color: "#7B6FAA" },
+  { id: "aarasaan",  name: "AaraSaan Consulting",    color: "#8A8278" },
 ];
 
 const DEFAULT_TASKS = [

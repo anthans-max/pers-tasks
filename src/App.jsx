@@ -6,17 +6,39 @@ let _id = Date.now(); const uid = () => String(++_id);
 const USER_ID = import.meta.env.VITE_USER_ID ?? "placeholder-user-id";
 
 const T = {
-  navy:"#003262", navyDark:"#001f3f", navyMid:"#002855",
-  gold:"#FDB515", goldS:"rgba(253,181,21,0.12)", goldB:"rgba(253,181,21,0.28)",
-  bg:"#00132a", bg2:"#000e1f",
-  surface:"rgba(255,255,255,0.04)", border:"rgba(253,181,21,0.1)", borderS:"rgba(255,255,255,0.06)",
-  text:"#f0f4ff", textSoft:"rgba(240,244,255,0.75)", textMute:"rgba(240,244,255,0.55)",
-  navBg:"rgba(0,14,31,0.98)", email:"#7eb3ff", emailS:"rgba(126,179,255,0.12)",
-  red:"#ef4444", green:"#34d399", modal:"#001830",
+  // backgrounds
+  bg:       "#F4F1EC",
+  bg2:      "#EDE9E1",
+  navBg:    "#EDE9E1",
+  navyDark: "#E4DFDA",
+  navyMid:  "#EDE9E1",
+  navy:     "#D0C9BF",
+  modal:    "#F4F1EC",
+
+  // surfaces & borders
+  surface:  "rgba(44,40,32,0.04)",
+  border:   "rgba(44,40,32,0.12)",
+  borderS:  "rgba(44,40,32,0.08)",
+
+  // accent (replaces gold)
+  gold:  "#B5871A",
+  goldS: "rgba(181,135,26,0.10)",
+  goldB: "rgba(181,135,26,0.22)",
+
+  // text
+  text:     "#2C2820",
+  textSoft: "#5A544C",
+  textMute: "#A09890",
+
+  // semantic
+  email:  "#4A7C6F",
+  emailS: "rgba(74,124,111,0.12)",
+  red:    "#B94040",
+  green:  "#4A7C6F",
 };
 
-const PC = { 1:"#ef4444", 2:T.gold, 3:"#60a5fa", 4:"rgba(255,255,255,0.18)" };
-const PG = { 1:"rgba(239,68,68,0.18)", 2:"rgba(253,181,21,0.14)", 3:"rgba(96,165,250,0.12)", 4:"transparent" };
+const PC = { 1:"#B94040", 2:"#B5871A", 3:"#4A7C6F", 4:"rgba(44,40,32,0.18)" };
+const PG = { 1:"rgba(185,64,64,0.12)", 2:"rgba(181,135,26,0.10)", 3:"rgba(74,124,111,0.10)", 4:"transparent" };
 const PL = { 1:"Urgent", 2:"High", 3:"Medium", 4:"None" };
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -56,10 +78,10 @@ const Ico = ({ d, size=16, color=T.textSoft, style={} }) => (
 
 /* DEFAULT_PROJECTS — seed reference (see scripts/seed.js)
 const DEFAULT_PROJECTS = [
-  {id:"lotus",name:"Lotus AI Lab",color:"#60a5fa"},
-  {id:"sundermed",name:"Sunder Med/Personal",color:"#f59e0b"},
-  {id:"personal",name:"Personal",color:"#34d399"},
-  {id:"aarasaan",name:"AaraSaan Consulting",color:"#a78bfa"},
+  {id:"lotus",name:"Lotus AI Lab",color:"#4A7C6F"},
+  {id:"sundermed",name:"Sunder Med/Personal",color:"#B5871A"},
+  {id:"personal",name:"Personal",color:"#7B6FAA"},
+  {id:"aarasaan",name:"AaraSaan Consulting",color:"#8A8278"},
 ];
 */
 
@@ -298,10 +320,10 @@ export default function App() {
   // ── Shared Components ────────────────────────────────────────
 
   const GoldBar = () => (
-    <div style={{height:3,background:`linear-gradient(90deg,${T.navyDark},${T.gold} 40%,${T.gold} 60%,${T.navyDark})`,flexShrink:0}} />
+    <div style={{height:3,background:"#2C2820",flexShrink:0}} />
   );
 
-  const inp = {background:"rgba(0,50,98,0.4)",border:`1px solid ${T.border}`,color:T.text,borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
+  const inp = {background:"rgba(44,40,32,0.06)",border:`1px solid ${T.border}`,color:T.text,borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
 
   const TaskCard = ({task}) => {
     const sel = selectedTask?.id===task.id;
@@ -309,11 +331,11 @@ export default function App() {
     return (
       <div onClick={()=>setSelectedTask(sel?null:task)}
         style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 16px",borderRadius:11,
-          background:sel?"rgba(0,50,98,0.5)":"rgba(0,50,98,0.22)",
-          border:`1px solid ${sel?T.goldB:"rgba(253,181,21,0.07)"}`,
+          background:sel?"rgba(44,40,32,0.10)":"#EDE9E1",
+          border:`1px solid ${sel?T.goldB:T.borderS}`,
           position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:4,transition:"all 0.15s"}}
-        onMouseEnter={e=>{e.currentTarget.style.background="rgba(0,50,98,0.38)";e.currentTarget.style.borderColor="rgba(253,181,21,0.18)";}}
-        onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(0,50,98,0.5)":"rgba(0,50,98,0.22)";e.currentTarget.style.borderColor=sel?T.goldB:"rgba(253,181,21,0.07)";}}
+        onMouseEnter={e=>{e.currentTarget.style.background="#E8E3DB";e.currentTarget.style.borderColor="rgba(181,135,26,0.22)";}}
+        onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(44,40,32,0.10)":"#EDE9E1";e.currentTarget.style.borderColor=sel?"rgba(181,135,26,0.22)":"rgba(44,40,32,0.08)";}}
       >
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:PC[task.priority],borderRadius:"3px 0 0 3px"}} />
         <button onClick={e=>{e.stopPropagation();toggleDone(task.id);}}
@@ -428,10 +450,10 @@ export default function App() {
     return (
       <div style={{padding:`16px ${padH}px`}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-          <button onClick={()=>setCalMonth(p=>p.month===0?{year:p.year-1,month:11}:{...p,month:p.month-1})} style={{background:"rgba(0,50,98,0.4)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevL} size={16} color={T.textSoft}/></button>
-          <div style={{flex:1,textAlign:"center",fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,color:T.gold}}>{MONTHS[month]} {year}</div>
-          <button onClick={()=>setCalMonth(p=>p.month===11?{year:p.year+1,month:0}:{...p,month:p.month+1})} style={{background:"rgba(0,50,98,0.4)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevR} size={16} color={T.textSoft}/></button>
-          <button onClick={()=>setCalMonth({year:tY,month:tM})} style={{padding:"6px 12px",background:"rgba(0,50,98,0.4)",border:`1px solid ${T.borderS}`,color:T.textSoft,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:600}}>Today</button>
+          <button onClick={()=>setCalMonth(p=>p.month===0?{year:p.year-1,month:11}:{...p,month:p.month-1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevL} size={16} color={T.textSoft}/></button>
+          <div style={{flex:1,textAlign:"center",fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:400,color:T.gold}}>{MONTHS[month]} {year}</div>
+          <button onClick={()=>setCalMonth(p=>p.month===11?{year:p.year+1,month:0}:{...p,month:p.month+1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevR} size={16} color={T.textSoft}/></button>
+          <button onClick={()=>setCalMonth({year:tY,month:tM})} style={{padding:"6px 12px",background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,color:T.textSoft,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400}}>Today</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,marginBottom:2}}>
           {DAYS.map(d=><div key={d} style={{padding:"6px 0",fontSize:10,fontWeight:700,color:T.textMute,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>{d}</div>)}
@@ -484,12 +506,12 @@ export default function App() {
             {emailTasks.map(et=>{
               const checked = selectedEmails.has(et.id);
               return (
-                <div key={et.id} style={{background:"rgba(0,50,98,0.25)",border:`1px solid ${checked?T.goldB:"rgba(126,179,255,0.15)"}`,borderLeft:`3px solid ${checked?T.gold:T.email}`,borderRadius:12,padding:"14px 16px",transition:"border-color 0.15s"}}>
+                <div key={et.id} style={{background:"#EDE9E1",border:`1px solid ${checked?T.goldB:T.emailS}`,borderLeft:`3px solid ${checked?T.gold:T.email}`,borderRadius:12,padding:"14px 16px",transition:"border-color 0.15s"}}>
                   <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
                     <button onClick={()=>toggleEmailSelect(et.id)}
                       style={{width:20,height:20,minWidth:20,borderRadius:5,border:`2px solid ${checked?T.gold:"rgba(253,181,21,0.3)"}`,background:checked?T.gold:"transparent",cursor:"pointer",padding:0,flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}
                     >
-                      {checked&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke={T.bg2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      {checked&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </button>
                     <div style={{width:36,height:36,borderRadius:10,background:T.emailS,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>✉️</div>
                     <div style={{flex:1}}>
@@ -510,15 +532,15 @@ export default function App() {
           <div style={{position:"sticky",bottom:0,marginLeft:`-${padH}px`,marginRight:`-${padH}px`,background:`linear-gradient(0deg,${T.bg2} 85%,transparent)`,padding:`12px ${padH+4}px 16px`,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
             <span style={{fontSize:13,fontWeight:700,color:T.gold,whiteSpace:"nowrap"}}>{selectedEmails.size} selected</span>
             <select value={batchProject} onChange={e=>setBatchProject(e.target.value)}
-              style={{flex:1,minWidth:140,background:"rgba(0,50,98,0.6)",border:`1px solid ${T.goldB}`,color:T.text,borderRadius:8,padding:"7px 10px",fontSize:12,outline:"none"}}>
+              style={{flex:1,minWidth:140,background:"rgba(44,40,32,0.06)",border:`1px solid ${T.goldB}`,color:T.text,borderRadius:8,padding:"7px 10px",fontSize:12,outline:"none"}}>
               {sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button onClick={()=>batchAssign(batchProject)}
-              style={{padding:"7px 16px",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>
+              style={{padding:"7px 16px",background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",whiteSpace:"nowrap",fontFamily:"'Jost', sans-serif"}}>
               Assign
             </button>
             <button onClick={batchDismiss}
-              style={{padding:"7px 12px",background:"rgba(255,255,255,0.04)",border:`1px solid ${T.borderS}`,color:T.textMute,borderRadius:8,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"}}>
+              style={{padding:"7px 12px",background:T.surface,border:`1px solid ${T.borderS}`,color:T.textMute,borderRadius:6,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"}}>
               Dismiss
             </button>
           </div>
@@ -538,7 +560,7 @@ export default function App() {
         />
         <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
           <button onClick={onClose} style={{padding:"8px 16px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
-          <button onClick={onSave} style={{padding:"10px 24px",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:14}}>Create</button>
+          <button onClick={onSave} style={{padding:"10px 24px",background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:6,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Create</button>
         </div>
       </div>
     </div>
@@ -566,7 +588,7 @@ export default function App() {
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <button onClick={()=>setAddModal(false)} style={{padding:"10px 20px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
-              <button onClick={addTask} style={{padding:"10px 28px",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:14}}>Add Task</button>
+              <button onClick={addTask} style={{padding:"10px 28px",background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:6,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Add Task</button>
             </div>
           </div>
         </div>
@@ -595,7 +617,7 @@ export default function App() {
                 <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
               ))}
             </div>
-            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:15,fontFamily:"'Playfair Display',serif"}}>✓ Mark Complete</button>
+            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:8,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
           </div>
         </div>
       )}
@@ -608,7 +630,7 @@ export default function App() {
             {sortedProjects.map(proj=>(
               <button key={proj.id} onClick={()=>assignEmail(assigningEmail,proj.id)}
                 style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:"transparent",border:"none",color:T.text,cursor:"pointer",borderRadius:8,fontSize:13,textAlign:"left"}}
-                onMouseEnter={e=>e.currentTarget.style.background="rgba(0,50,98,0.4)"}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(44,40,32,0.06)"}
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}
               >
                 <div style={{width:8,height:8,borderRadius:"50%",background:proj.color||T.gold,flexShrink:0}}/>
@@ -629,15 +651,15 @@ export default function App() {
     <div style={{width:248,minWidth:248,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:"20px 20px 14px",borderBottom:`1px solid ${T.borderS}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-          <div style={{width:38,height:38,borderRadius:"50%",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`2px solid ${T.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:T.gold,flexShrink:0}}>A</div>
+          <div style={{width:38,height:38,borderRadius:"50%",background:"#2C2820",border:`2px solid ${T.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:500,fontSize:14,color:T.gold,flexShrink:0}}>A</div>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,color:T.gold,fontWeight:600}}>Anthan</div>
             <div style={{fontSize:11,color:T.textMute}}>Task Manager</div>
           </div>
         </div>
         <button onClick={()=>{setNewProject(projectFilter==="all"?projects[0]?.id:projectFilter);setAddModal(true);}}
-          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 14px",background:T.goldS,border:`1px solid ${T.goldB}`,borderRadius:10,color:T.gold,fontSize:13,fontWeight:600,cursor:"pointer"}}>
-          <div style={{width:20,height:20,borderRadius:"50%",background:T.gold,color:T.bg2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,flexShrink:0}}>+</div>
+          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 14px",background:"#2C2820",border:"none",borderRadius:6,color:"#F4F1EC",fontSize:13,fontWeight:400,letterSpacing:"0.05em",cursor:"pointer",fontFamily:"'Jost', sans-serif"}}>
+          <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(244,241,236,0.15)",color:"#F4F1EC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:400,flexShrink:0}}>+</div>
           Add task
         </button>
       </div>
@@ -645,14 +667,14 @@ export default function App() {
       <div style={{padding:"12px 12px 4px",flexShrink:0}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute,padding:"0 8px 8px"}}>Views</div>
         {[
-          {key:"tasks",icon:I.tasks,label:"All Tasks",badge:openCount,badgeBg:"rgba(255,255,255,0.08)",badgeC:T.textMute},
-          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.gold,badgeC:T.bg2},
+          {key:"tasks",icon:I.tasks,label:"All Tasks",badge:openCount,badgeBg:T.surface,badgeC:T.textMute},
+          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.gold,badgeC:"#F4F1EC"},
           {key:"calendar",icon:I.cal,label:"Calendar",badge:null},
-          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:T.bg2},
+          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:"#F4F1EC"},
         ].map(n=>(
           <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}}
             style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,color:view===n.key?T.gold:T.textSoft,background:view===n.key?T.goldS:"transparent",borderLeft:`3px solid ${view===n.key?T.gold:"transparent"}`,transition:"all 0.15s"}}
-            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color=T.text;}}}
+            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(44,40,32,0.04)";e.currentTarget.style.color=T.text;}}}
             onMouseLeave={e=>{if(view!==n.key){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.textSoft;}}}
           >
             <Ico d={n.icon} size={16} color={view===n.key?T.gold:T.textMute}/>
@@ -673,8 +695,8 @@ export default function App() {
           const active=projectFilter===p.id&&view==="tasks";
           return (
             <div key={p.id} onClick={()=>{setProjectFilter(p.id);setView("tasks");}}
-              style={{display:"flex",alignItems:"center",gap:9,padding:"7px 10px",borderRadius:8,cursor:"pointer",fontSize:13,marginBottom:1,color:active?T.text:T.textSoft,background:active?"rgba(255,255,255,0.06)":"transparent",transition:"all 0.15s"}}
-              onMouseEnter={e=>{if(!active){e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color=T.text;}}}
+              style={{display:"flex",alignItems:"center",gap:9,padding:"7px 10px",borderRadius:8,cursor:"pointer",fontSize:13,marginBottom:1,color:active?T.text:T.textSoft,background:active?"rgba(44,40,32,0.08)":"transparent",transition:"all 0.15s"}}
+              onMouseEnter={e=>{if(!active){e.currentTarget.style.background="rgba(44,40,32,0.04)";e.currentTarget.style.color=T.text;}}}
               onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.textSoft;}}}
             >
               <div style={{width:8,height:8,borderRadius:"50%",background:p.color||T.gold,flexShrink:0}}/>
@@ -686,7 +708,7 @@ export default function App() {
       </div>
 
       <div style={{padding:"10px 16px",borderTop:`1px solid ${T.borderS}`,display:"flex",gap:8}}>
-        <button title="Settings" style={{flex:1,padding:8,borderRadius:8,background:"rgba(255,255,255,0.04)",border:`1px solid ${T.borderS}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <button title="Settings" style={{flex:1,padding:8,borderRadius:8,background:T.surface,border:`1px solid ${T.borderS}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <Ico d={I.settings} size={15} color={T.textMute}/>
         </button>
       </div>
@@ -702,7 +724,7 @@ export default function App() {
         <div style={{padding:"18px 20px 14px",borderBottom:`1px solid ${T.borderS}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{fontSize:11,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1}}>Task Detail</div>
           <div style={{display:"flex",gap:6}}>
-            <button onClick={()=>deleteTask(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:6,borderRadius:6}} onMouseEnter={e=>e.currentTarget.style.background="rgba(239,68,68,0.1)"} onMouseLeave={e=>e.currentTarget.style.background="none"}><Ico d={I.trash} size={15} color={T.red}/></button>
+            <button onClick={()=>deleteTask(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:6,borderRadius:6}} onMouseEnter={e=>e.currentTarget.style.background="rgba(185,64,64,0.10)"} onMouseLeave={e=>e.currentTarget.style.background="none"}><Ico d={I.trash} size={15} color={T.red}/></button>
             <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={15} color={T.textMute}/></button>
           </div>
         </div>
@@ -720,13 +742,13 @@ export default function App() {
           ].map(({label,content})=>(
             <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
           ))}
-          {task.fromEmail&&<div style={{background:T.emailS,border:`1px solid rgba(126,179,255,0.2)`,borderRadius:8,padding:"10px 12px"}}>
+          {task.fromEmail&&<div style={{background:T.emailS,border:`1px solid ${T.emailS}`,borderRadius:8,padding:"10px 12px"}}>
             <div style={{fontSize:10,fontWeight:700,color:T.email,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>Email Origin</div>
             <div style={{fontSize:12,color:T.textSoft}}>From: {task.emailFrom}</div>
           </div>}
         </div>
         <div style={{padding:"14px 20px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
-          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"'Playfair Display',serif"}}>✓ Mark Complete</button>
+          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:8,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
         </div>
       </div>
     );
@@ -738,11 +760,11 @@ export default function App() {
     return (
       <div style={{padding:"18px 28px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.borderS}`,flexShrink:0}}>
         <div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:600,color:T.gold}}>{titles[view]||"Tasks"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:T.gold}}>{titles[view]||"Tasks"}</div>
           <div style={{fontSize:12,color:T.textMute,marginTop:2,textTransform:"uppercase",letterSpacing:"0.3px"}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.04)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"7px 12px",width:200}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,border:`1px solid ${T.borderS}`,borderRadius:8,padding:"7px 12px",width:200}}>
             <Ico d={I.search} size={14} color={T.textMute}/>
             <span style={{fontSize:12,color:T.textMute}}>Search tasks…</span>
           </div>
@@ -764,13 +786,13 @@ export default function App() {
           {emailTasks.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:T.red,color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{emailTasks.length}</span>}
         </button>
         <button onClick={()=>setAddModal(true)} style={{width:36,height:36,borderRadius:"50%",background:T.goldS,border:`1px solid ${T.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:T.gold,fontWeight:700,lineHeight:1}}>+</button>
-        <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`2px solid ${T.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:T.gold}}>A</div>
+        <div style={{width:36,height:36,borderRadius:"50%",background:"#2C2820",border:`2px solid ${T.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:500,fontSize:13,color:T.gold}}>A</div>
       </div>
     </div>
   );
 
   const renderSummaryCard = () => (
-    <div style={{margin:"14px 16px 0",background:`linear-gradient(135deg,${T.navy},rgba(0,50,98,0.5))`,border:`1px solid ${T.goldB}`,borderRadius:14,padding:16,display:"flex",position:"relative",overflow:"hidden"}}>
+    <div style={{margin:"14px 16px 0",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.border}`,borderRadius:14,padding:16,display:"flex",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,${T.gold},transparent)`}}/>
       {[{n:todayCount,l:"Due Today",c:T.gold},{n:openCount,l:"Open",c:T.textSoft},{n:emailTasks.length,l:"Emails",c:T.email}].map(({n,l,c},i,arr)=>(
         <div key={l} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${T.goldB}`:"none"}}>
@@ -794,7 +816,7 @@ export default function App() {
   );
 
   // ── RENDER ───────────────────────────────────────────────────
-  const base = {color:T.text,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif",fontSize:14,background:T.bg};
+  const base = {color:T.text,fontFamily:"'Jost', sans-serif",fontSize:14,background:T.bg};
 
   if (!isMobile) return (
     <div style={{...base,display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden"}}>
