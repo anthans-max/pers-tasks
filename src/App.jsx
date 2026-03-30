@@ -201,7 +201,7 @@ export default function App() {
       .then(({ events=[], lastFetch, warning, cached, debug }) => {
         if (warning) console.warn("[gcal] warning:", warning);
         console.log(`[gcal] response: ${events.length} events, cached=${cached}, lastFetch=${lastFetch ? new Date(lastFetch).toLocaleTimeString() : null}`);
-        if (debug) console.log("[gcal] debug:", debug);
+        if (debug) { console.log("[gcal] debug:", JSON.stringify(debug, null, 2)); }
         if (events.length) console.log("[gcal] first 5 events:", events.slice(0,5));
         setGcalEvents(events);
         if (lastFetch) setGcalLastSync(lastFetch);
