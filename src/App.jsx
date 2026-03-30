@@ -10,7 +10,7 @@ const T = {
   gold:"#FDB515", goldS:"rgba(253,181,21,0.12)", goldB:"rgba(253,181,21,0.28)",
   bg:"#00132a", bg2:"#000e1f",
   surface:"rgba(255,255,255,0.04)", border:"rgba(253,181,21,0.1)", borderS:"rgba(255,255,255,0.06)",
-  text:"#f0f4ff", textSoft:"rgba(240,244,255,0.5)", textMute:"rgba(240,244,255,0.26)",
+  text:"#f0f4ff", textSoft:"rgba(240,244,255,0.75)", textMute:"rgba(240,244,255,0.55)",
   navBg:"rgba(0,14,31,0.98)", email:"#7eb3ff", emailS:"rgba(126,179,255,0.12)",
   red:"#ef4444", green:"#34d399", modal:"#001830",
 };
