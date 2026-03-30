@@ -4,6 +4,12 @@ const load = (k, fb) => { try { const s = localStorage.getItem(k); return s ? JS
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 let _id = Date.now(); const uid = () => String(++_id);
 
+const DATA_VERSION = "v2";
+if (localStorage.getItem("tm_version") !== DATA_VERSION) {
+  ["tm_projects","tm_tasks","tm_sections","tm_email"].forEach(k => localStorage.removeItem(k));
+  localStorage.setItem("tm_version", DATA_VERSION);
+}
+
 const T = {
   navy:"#003262", navyDark:"#001f3f", navyMid:"#002855",
   gold:"#FDB515", goldS:"rgba(253,181,21,0.12)", goldB:"rgba(253,181,21,0.28)",
