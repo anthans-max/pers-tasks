@@ -463,9 +463,9 @@ export default function App() {
       {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>(
         <div key={f.id} onClick={()=>setProjectFilter(f.id)}
           style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
-            background:projectFilter===f.id?T.forestPale:T.bg,
-            border:`1px solid ${projectFilter===f.id?T.forestMid:T.border}`,
-            color:projectFilter===f.id?T.forest:T.textSoft,
+            background:projectFilter===f.id?T.forest:T.bg,
+            border:`1px solid ${projectFilter===f.id?T.forest:T.border}`,
+            color:projectFilter===f.id?T.bg:T.textSoft,
           }}
         >{f.name}</div>
       ))}
