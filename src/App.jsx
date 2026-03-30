@@ -131,6 +131,8 @@ export default function App() {
   const [newDate, setNewDate] = useState("");
   const [newProject, setNewProject] = useState("lotus");
   const [assigningEmail, setAssigningEmail] = useState(null);
+  const [selectedEmails, setSelectedEmails] = useState(new Set());
+  const [batchProject, setBatchProject] = useState("lotus");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return {year:d.getFullYear(), month:d.getMonth()}; });
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
@@ -191,6 +193,9 @@ export default function App() {
     setTasks(p=>[...p,{id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom}]);
     setEmailTasks(p=>p.filter(e=>e.id!==eid)); setAssigningEmail(null);
   };
+  const toggleEmailSelect = (id) => setSelectedEmails(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
+  const batchAssign = (projId) => { selectedEmails.forEach(eid=>assignEmail(eid,projId)); setSelectedEmails(new Set()); };
+  const batchDismiss = () => { setEmailTasks(p=>p.filter(e=>!selectedEmails.has(e.id))); setSelectedEmails(new Set()); };
   const addProject = () => {
     if(!modalName.trim()) return;
     const id=uid();
@@ -373,42 +378,62 @@ export default function App() {
     );
   };
 
-  const renderEmailView = (padH=16) => (
-    <div style={{padding:`16px ${padH}px`}}>
-      <div style={{marginBottom:16}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,color:T.gold,marginBottom:4}}>Email Capture</div>
-        <div style={{fontSize:13,color:T.textMute}}>Tasks from emails — assign to a project or dismiss</div>
-      </div>
-      {emailTasks.length===0?(
-        <div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
-          <div style={{fontSize:40,marginBottom:12}}>✉️</div>
-          <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All caught up</div>
-        </div>
-      ):(
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {emailTasks.map(et=>(
-            <div key={et.id} style={{background:"rgba(0,50,98,0.25)",border:`1px solid rgba(126,179,255,0.15)`,borderLeft:`3px solid ${T.email}`,borderRadius:12,padding:"14px 16px"}}>
-              <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                <div style={{width:36,height:36,borderRadius:10,background:T.emailS,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>✉️</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6}}>{et.title}</div>
-                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                    <span style={{fontSize:11,background:T.emailS,color:T.email,padding:"2px 8px",borderRadius:8,fontWeight:600}}>From: {et.emailFrom}</span>
-                    <span style={{fontSize:11,background:PG[et.priority],color:PC[et.priority],padding:"2px 8px",borderRadius:8,fontWeight:600}}>{PL[et.priority]}</span>
-                    {et.dueDate&&<span style={{fontSize:11,color:isOverdue(et.dueDate)?T.red:"rgba(253,181,21,0.7)",fontWeight:600}}>📅 {fmtDate(et.dueDate)}</span>}
+  const renderEmailView = (padH=16) => {
+    const hasSel = selectedEmails.size > 0;
+    return (
+      <div style={{padding:`16px ${padH}px`,paddingBottom: hasSel ? `${16+72}px` : 16}}>
+        {emailTasks.length===0?(
+          <div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
+            <div style={{fontSize:40,marginBottom:12}}>✉️</div>
+            <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All caught up</div>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {emailTasks.map(et=>{
+              const checked = selectedEmails.has(et.id);
+              return (
+                <div key={et.id} style={{background:"rgba(0,50,98,0.25)",border:`1px solid ${checked?T.goldB:"rgba(126,179,255,0.15)"}`,borderLeft:`3px solid ${checked?T.gold:T.email}`,borderRadius:12,padding:"14px 16px",transition:"border-color 0.15s"}}>
+                  <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                    <button onClick={()=>toggleEmailSelect(et.id)}
+                      style={{width:20,height:20,minWidth:20,borderRadius:5,border:`2px solid ${checked?T.gold:"rgba(253,181,21,0.3)"}`,background:checked?T.gold:"transparent",cursor:"pointer",padding:0,flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}
+                    >
+                      {checked&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke={T.bg2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </button>
+                    <div style={{width:36,height:36,borderRadius:10,background:T.emailS,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>✉️</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6}}>{et.title}</div>
+                      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                        <span style={{fontSize:11,background:T.emailS,color:T.email,padding:"2px 8px",borderRadius:8,fontWeight:600}}>From: {et.emailFrom}</span>
+                        <span style={{fontSize:11,background:PG[et.priority],color:PC[et.priority],padding:"2px 8px",borderRadius:8,fontWeight:600}}>{PL[et.priority]}</span>
+                        {et.dueDate&&<span style={{fontSize:11,color:isOverdue(et.dueDate)?T.red:"rgba(253,181,21,0.7)",fontWeight:600}}>📅 {fmtDate(et.dueDate)}</span>}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div style={{display:"flex",gap:6,flexShrink:0}}>
-                  <button onClick={()=>setAssigningEmail(et.id)} style={{padding:"6px 12px",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700}}>Assign</button>
-                  <button onClick={()=>setEmailTasks(p=>p.filter(e=>e.id!==et.id))} style={{padding:"6px 10px",background:"rgba(255,255,255,0.04)",border:`1px solid ${T.borderS}`,color:T.textMute,borderRadius:8,cursor:"pointer",fontSize:12}}>Dismiss</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+              );
+            })}
+          </div>
+        )}
+        {hasSel&&(
+          <div style={{position:"sticky",bottom:0,marginLeft:`-${padH}px`,marginRight:`-${padH}px`,background:`linear-gradient(0deg,${T.bg2} 85%,transparent)`,padding:`12px ${padH+4}px 16px`,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+            <span style={{fontSize:13,fontWeight:700,color:T.gold,whiteSpace:"nowrap"}}>{selectedEmails.size} selected</span>
+            <select value={batchProject} onChange={e=>setBatchProject(e.target.value)}
+              style={{flex:1,minWidth:140,background:"rgba(0,50,98,0.6)",border:`1px solid ${T.goldB}`,color:T.text,borderRadius:8,padding:"7px 10px",fontSize:12,outline:"none"}}>
+              {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <button onClick={()=>batchAssign(batchProject)}
+              style={{padding:"7px 16px",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>
+              Assign
+            </button>
+            <button onClick={batchDismiss}
+              style={{padding:"7px 12px",background:"rgba(255,255,255,0.04)",border:`1px solid ${T.borderS}`,color:T.textMute,borderRadius:8,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"}}>
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // ── Modals ───────────────────────────────────────────────────
   const NameModal = ({title,onSave,onClose}) => (
