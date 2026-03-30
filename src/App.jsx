@@ -1,14 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
+import { supabase } from "./supabase.js";
 
-const load = (k, fb) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : fb; } catch { return fb; } };
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 let _id = Date.now(); const uid = () => String(++_id);
 
-const DATA_VERSION = "v2";
-if (localStorage.getItem("tm_version") !== DATA_VERSION) {
-  ["tm_projects","tm_tasks","tm_sections","tm_email"].forEach(k => localStorage.removeItem(k));
-  localStorage.setItem("tm_version", DATA_VERSION);
-}
+const USER_ID = import.meta.env.VITE_USER_ID ?? "placeholder-user-id";
 
 const T = {
   navy:"#003262", navyDark:"#001f3f", navyMid:"#002855",
@@ -59,12 +54,16 @@ const Ico = ({ d, size=16, color=T.textSoft, style={} }) => (
   </svg>
 );
 
+/* DEFAULT_PROJECTS — seed reference (see scripts/seed.js)
 const DEFAULT_PROJECTS = [
   {id:"lotus",name:"Lotus AI Lab",color:"#60a5fa"},
   {id:"sundermed",name:"Sunder Med/Personal",color:"#f59e0b"},
   {id:"personal",name:"Personal",color:"#34d399"},
   {id:"aarasaan",name:"AaraSaan Consulting",color:"#a78bfa"},
 ];
+*/
+
+/* DEFAULT_TASKS — seed reference (see scripts/seed.js)
 const DEFAULT_TASKS = [
   {id:"t1",projectId:"personal",title:"Karla bills",priority:4,dueDate:"",completed:false,fromEmail:false},
   {id:"t2",projectId:"sundermed",title:"Reset ADP payroll",priority:4,dueDate:"",completed:false,fromEmail:false},
@@ -97,14 +96,7 @@ const DEFAULT_TASKS = [
   {id:"t29",projectId:"aarasaan",title:"Amazon jobs site",priority:1,dueDate:"",completed:false,fromEmail:false},
   {id:"t30",projectId:"aarasaan",title:"Statement of incorporation for AaraSaan",priority:2,dueDate:"2026-11-30",recurring:true,completed:false,fromEmail:false},
 ];
-const DEFAULT_EMAIL_TASKS = [
-  {id:"e1",title:"Check First American Title questionnaire from akay@firstam.com",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:2,dueDate:"2026-04-02",captured:"2026-03-29"},
-  {id:"e2",title:"Send property tax check to Kav before April 10th deadline",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:1,dueDate:"2026-04-10",captured:"2026-03-29"},
-  {id:"e3",title:"Decide signing authority: new Board Resolution or have Shun sign",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:1,dueDate:"2026-04-02",captured:"2026-03-29"},
-  {id:"e4",title:"Finalize CA Attorney General letter and send via certified mail",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:1,dueDate:"2026-04-02",captured:"2026-03-29"},
-  {id:"e5",title:"Locate TRRO Bylaws or remove from AG letter enclosures",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:2,dueDate:"2026-04-01",captured:"2026-03-29"},
-  {id:"e6",title:"Review Articles of Incorporation and Purchase Agreement",emailFrom:"Kavitha Pathmarajah",emailDate:"2026-03-28",priority:3,dueDate:"2026-04-01",captured:"2026-03-29"},
-];
+*/
 
 const useIsMobile = () => {
   const [mob, setMob] = useState(window.innerWidth < 768);
@@ -118,9 +110,9 @@ const useIsMobile = () => {
 
 // ─────────────────────────────────────────────────────────────
 export default function App() {
-  const [projects, setProjects] = useState(() => load("tm_projects", DEFAULT_PROJECTS));
-  const [tasks, setTasks] = useState(() => load("tm_tasks", DEFAULT_TASKS));
-  const [emailTasks, setEmailTasks] = useState(() => load("tm_email", DEFAULT_EMAIL_TASKS));
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [emailTasks, setEmailTasks] = useState([]);
   const [view, setView] = useState("tasks");
   const [dayFilter, setDayFilter] = useState(null);
   const [projectFilter, setProjectFilter] = useState("all");
@@ -138,9 +130,30 @@ export default function App() {
   const [modalName, setModalName] = useState("");
   const isMobile = useIsMobile();
 
-  useEffect(() => { save("tm_projects", projects); }, [projects]);
-  useEffect(() => { save("tm_tasks", tasks); }, [tasks]);
-  useEffect(() => { save("tm_email", emailTasks); }, [emailTasks]);
+  useEffect(() => {
+    Promise.all([
+      supabase.from("tm_projects").select("*").eq("user_id", USER_ID),
+      supabase.from("tm_tasks").select("*").eq("user_id", USER_ID).eq("completed", false),
+      supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID),
+    ]).then(([p, t, e]) => {
+      if (p.error) console.error("fetch tm_projects:", p.error.message);
+      else setProjects(p.data.map(r => ({ id: r.id, name: r.name, color: r.color })));
+      if (t.error) console.error("fetch tm_tasks:", t.error.message);
+      else setTasks(t.data.map(r => ({
+        id: r.id, projectId: r.project_id, title: r.title, notes: r.notes ?? "",
+        priority: r.priority, dueDate: r.due_date ?? "", completed: r.completed,
+        recurring: r.recurring ?? false, subtasks: r.subtasks ?? 0,
+        subtasksDone: r.subtasks_done ?? 0, fromEmail: r.from_email,
+        emailFrom: r.email_from ?? "",
+      })));
+      if (e.error) console.error("fetch tm_email_tasks:", e.error.message);
+      else setEmailTasks(e.data.map(r => ({
+        id: r.id, title: r.title, emailFrom: r.email_from ?? "",
+        emailDate: r.email_date ?? "", priority: r.priority,
+        dueDate: r.due_date ?? "", captured: r.captured_at ?? "",
+      })));
+    });
+  }, []);
 
   const TODAY = useMemo(() => todayStr(), []);
 
@@ -187,25 +200,99 @@ export default function App() {
   // Handlers
   const addTask = () => {
     if (!newTitle.trim()) return;
-    setTasks(p=>[...p,{id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:newDate,subtasks:0,subtasksDone:0,completed:false,fromEmail:false}]);
+    const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:newDate,subtasks:0,subtasksDone:0,completed:false,fromEmail:false};
+    setTasks(p=>[...p,newTask]);
     setNewTitle(""); setNewPrio(4); setNewDate(""); setAddModal(false);
+    supabase.from("tm_tasks").insert({
+      id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
+      priority:newTask.priority, due_date:newTask.dueDate||null, completed:false,
+      recurring:false, subtasks:0, subtasks_done:0, from_email:false, notes:"",
+    }).then(({error})=>{ if(error) console.error("addTask:", error.message); });
   };
-  const toggleDone = (id) => { setTasks(p=>p.map(t=>t.id===id?{...t,completed:!t.completed}:t)); if(selectedTask?.id===id) setSelectedTask(null); };
-  const deleteTask = (id) => { setTasks(p=>p.filter(t=>t.id!==id)); if(selectedTask?.id===id) setSelectedTask(null); };
-  const updateTask = (id,u) => { setTasks(p=>p.map(t=>t.id===id?{...t,...u}:t)); if(selectedTask?.id===id) setSelectedTask(p=>({...p,...u})); };
+  const toggleDone = (id) => {
+    setTasks(p=>p.map(t=>t.id===id?{...t,completed:true}:t));
+    if(selectedTask?.id===id) setSelectedTask(null);
+    supabase.from("tm_tasks").update({completed:true}).eq("id",id)
+      .then(({error})=>{ if(error) console.error("toggleDone:", error.message); });
+  };
+  const deleteTask = (id) => {
+    setTasks(p=>p.filter(t=>t.id!==id));
+    if(selectedTask?.id===id) setSelectedTask(null);
+    supabase.from("tm_tasks").delete().eq("id",id)
+      .then(({error})=>{ if(error) console.error("deleteTask:", error.message); });
+  };
+  const updateTask = (id,u) => {
+    setTasks(p=>p.map(t=>t.id===id?{...t,...u}:t));
+    if(selectedTask?.id===id) setSelectedTask(p=>({...p,...u}));
+    const patch = {};
+    if(u.title      !== undefined) patch.title         = u.title;
+    if(u.priority   !== undefined) patch.priority      = u.priority;
+    if(u.dueDate    !== undefined) patch.due_date       = u.dueDate || null;
+    if(u.projectId  !== undefined) patch.project_id    = u.projectId;
+    if(u.recurring  !== undefined) patch.recurring     = u.recurring;
+    if(u.subtasks   !== undefined) patch.subtasks      = u.subtasks;
+    if(u.subtasksDone !== undefined) patch.subtasks_done = u.subtasksDone;
+    if(u.notes      !== undefined) patch.notes         = u.notes;
+    if(Object.keys(patch).length)
+      supabase.from("tm_tasks").update(patch).eq("id",id)
+        .then(({error})=>{ if(error) console.error("updateTask:", error.message); });
+  };
   const assignEmail = (eid,projId) => {
     const et = emailTasks.find(e=>e.id===eid); if(!et) return;
-    setTasks(p=>[...p,{id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom}]);
-    setEmailTasks(p=>p.filter(e=>e.id!==eid)); setAssigningEmail(null);
+    const newTask = {id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom};
+    setTasks(p=>[...p,newTask]);
+    setEmailTasks(p=>p.filter(e=>e.id!==eid));
+    setAssigningEmail(null);
+    Promise.all([
+      supabase.from("tm_tasks").insert({
+        id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
+        priority:newTask.priority, due_date:newTask.dueDate||null, completed:false,
+        recurring:false, subtasks:0, subtasks_done:0, from_email:true,
+        email_from:newTask.emailFrom, notes:"",
+      }),
+      supabase.from("tm_email_tasks").delete().eq("id",eid),
+    ]).then(([ins,del])=>{
+      if(ins.error) console.error("assignEmail insert:", ins.error.message);
+      if(del.error) console.error("assignEmail delete:", del.error.message);
+    });
   };
   const toggleEmailSelect = (id) => setSelectedEmails(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
-  const batchAssign = (projId) => { selectedEmails.forEach(eid=>assignEmail(eid,projId)); setSelectedEmails(new Set()); };
-  const batchDismiss = () => { setEmailTasks(p=>p.filter(e=>!selectedEmails.has(e.id))); setSelectedEmails(new Set()); };
+  const batchAssign = (projId) => {
+    const ids = [...selectedEmails];
+    const newTasks = ids.map(eid => {
+      const et = emailTasks.find(e=>e.id===eid); if(!et) return null;
+      return {id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom};
+    }).filter(Boolean);
+    setTasks(p=>[...p,...newTasks]);
+    setEmailTasks(p=>p.filter(e=>!selectedEmails.has(e.id)));
+    setSelectedEmails(new Set());
+    Promise.all([
+      supabase.from("tm_tasks").insert(newTasks.map(t=>({
+        id:t.id, user_id:USER_ID, project_id:t.projectId, title:t.title,
+        priority:t.priority, due_date:t.dueDate||null, completed:false,
+        recurring:false, subtasks:0, subtasks_done:0, from_email:true,
+        email_from:t.emailFrom, notes:"",
+      }))),
+      supabase.from("tm_email_tasks").delete().in("id",ids),
+    ]).then(([ins,del])=>{
+      if(ins.error) console.error("batchAssign insert:", ins.error.message);
+      if(del.error) console.error("batchAssign delete:", del.error.message);
+    });
+  };
+  const batchDismiss = () => {
+    const ids = [...selectedEmails];
+    setEmailTasks(p=>p.filter(e=>!selectedEmails.has(e.id)));
+    setSelectedEmails(new Set());
+    supabase.from("tm_email_tasks").delete().in("id",ids)
+      .then(({error})=>{ if(error) console.error("batchDismiss:", error.message); });
+  };
   const addProject = () => {
     if(!modalName.trim()) return;
     const id=uid();
     setProjects(p=>[...p,{id,name:modalName.trim(),color:T.gold}]);
     setModalName(""); setShowProjectModal(false);
+    supabase.from("tm_projects").insert({id, user_id:USER_ID, name:modalName.trim(), color:T.gold})
+      .then(({error})=>{ if(error) console.error("addProject:", error.message); });
   };
 
   // ── Shared Components ────────────────────────────────────────
