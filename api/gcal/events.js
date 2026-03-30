@@ -13,15 +13,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { month } = req.query; // expected: "YYYY-MM"
+  const { month, bust } = req.query; // expected: "YYYY-MM"; bust=1 bypasses cache
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return res.status(400).json({ error: "Invalid month param — expected YYYY-MM" });
   }
 
   const now = Date.now();
 
-  // Return cached data if still fresh and same month
-  if (cache.data && cache.month === month && now - cache.ts < CACHE_TTL) {
+  // Return cached data if still fresh and same month (unless cache-bust requested)
+  if (!bust && cache.data && cache.month === month && now - cache.ts < CACHE_TTL) {
     res.setHeader("Cache-Control", "no-store");
     return res.json({ events: cache.data, cached: true, lastFetch: cache.ts });
   }
