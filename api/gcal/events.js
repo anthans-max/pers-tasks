@@ -43,8 +43,10 @@ export default async function handler(req, res) {
     const calendar = google.calendar({ version: "v3", auth: oauth2 });
 
     const [year, mo] = month.split("-").map(Number);
-    const timeMin = new Date(year, mo - 1, 1).toISOString();
-    const timeMax = new Date(year, mo, 0, 23, 59, 59).toISOString();
+    // Use Date.UTC to avoid server-timezone drift on timeMin/timeMax
+    const timeMin = new Date(Date.UTC(year, mo - 1, 1)).toISOString();
+    const timeMax = new Date(Date.UTC(year, mo, 1)).toISOString(); // exclusive: first moment of next month
+    console.log(`[gcal] fetching month=${month} timeMin=${timeMin} timeMax=${timeMax}`);
 
     const calendars = [
       { id: PRIMARY_ID, source: "primary" },
@@ -62,7 +64,9 @@ export default async function handler(req, res) {
             orderBy: "startTime",
             maxResults: 250,
           });
-          return (resp.data.items || []).map((event) => ({
+          const items = resp.data.items || [];
+          console.log(`[gcal] calendar=${source} raw items=${items.length}`, items.map(e => ({ summary: e.summary, start: e.start })));
+          return items.map((event) => ({
             id: event.id,
             title: event.summary || "(No title)",
             date: (event.start?.date || event.start?.dateTime || "").slice(0, 10),
@@ -80,6 +84,7 @@ export default async function handler(req, res) {
     );
 
     const events = fetched.flat().filter((e) => e.date);
+    console.log(`[gcal] total events after flatten+filter: ${events.length}`, events.slice(0, 5));
 
     // Update cache
     cache.data = events;

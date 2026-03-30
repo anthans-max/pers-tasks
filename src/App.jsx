@@ -193,14 +193,17 @@ export default function App() {
     const url = gcalFetchKey > 0
       ? `/api/gcal/events?month=${month}&bust=1`
       : `/api/gcal/events?month=${month}`;
+    console.log("[gcal] fetching", url);
     fetch(url)
       .then(r => r.json())
-      .then(({ events=[], lastFetch, warning }) => {
-        if (warning) console.warn("[gcal]", warning);
+      .then(({ events=[], lastFetch, warning, cached }) => {
+        if (warning) console.warn("[gcal] warning:", warning);
+        console.log(`[gcal] response: ${events.length} events, cached=${cached}, lastFetch=${lastFetch ? new Date(lastFetch).toLocaleTimeString() : null}`);
+        if (events.length) console.log("[gcal] first 5 events:", events.slice(0,5));
         setGcalEvents(events);
         if (lastFetch) setGcalLastSync(lastFetch);
       })
-      .catch(() => setGcalEvents([]));
+      .catch(err => { console.error("[gcal] fetch error:", err); setGcalEvents([]); });
   }, [view, calMonth, gcalFetchKey]);
 
   const TODAY = useMemo(() => todayStr(), []);
@@ -234,10 +237,13 @@ export default function App() {
     const {year,month} = calMonth;
     const daysInMonth = new Date(year,month+1,0).getDate();
     const startPad = new Date(year,month,1).getDay();
+    const gcalMapped = gcalVisible ? gcalEvents.filter(e=>e.date).map(e=>({...e,_gcal:true,dueDate:e.date})) : [];
+    console.log(`[calData] year=${year} month=${month}(0-idx) gcalEvents=${gcalEvents.length} gcalMapped=${gcalMapped.length} gcalVisible=${gcalVisible}`);
+    if (gcalMapped.length) console.log("[calData] gcal sample:", gcalMapped.slice(0,3).map(e=>({title:e.title,dueDate:e.dueDate})));
     const all = [
       ...tasks.filter(t=>!t.completed&&t.dueDate),
       ...emailTasks.filter(e=>e.dueDate).map(e=>({...e,_email:true})),
-      ...(gcalVisible ? gcalEvents.filter(e=>e.date).map(e=>({...e,_gcal:true,dueDate:e.date})) : []),
+      ...gcalMapped,
     ];
     const byDate = {};
     all.forEach(t => {
@@ -247,6 +253,7 @@ export default function App() {
         const k = d.getDate(); if(!byDate[k]) byDate[k]=[]; byDate[k].push(t);
       }
     });
+    console.log(`[calData] byDate keys with events:`, Object.keys(byDate));
     return {daysInMonth,startPad,byDate};
   }, [calMonth,tasks,emailTasks,gcalEvents,gcalVisible]);
 
