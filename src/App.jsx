@@ -155,6 +155,7 @@ export default function App() {
   const [batchProject, setBatchProject] = useState("lotus");
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return {year:d.getFullYear(), month:d.getMonth()}; });
   const [gcalEvents, setGcalEvents] = useState([]);
+  const [calendarDbEvents, setCalendarDbEvents] = useState([]);
   const [gcalVisible, setGcalVisible] = useState(true);
   const [gcalLastSync, setGcalLastSync] = useState(null);
   const [gcalFetchKey, setGcalFetchKey] = useState(0);
@@ -210,6 +211,21 @@ export default function App() {
       .finally(() => setGcalLoading(false));
   }, [view, calMonth, gcalFetchKey]);
 
+  useEffect(() => {
+    if (view !== "calendar") return;
+    const {year, month} = calMonth;
+    const startDate = `${year}-${String(month+1).padStart(2,"0")}-01`;
+    const endDate = `${year}-${String(month+1).padStart(2,"0")}-${new Date(year,month+1,0).getDate()}`;
+    supabase.from("tm_calendar_events")
+      .select("id,gcal_event_id,title,event_type,start_date,calendar_source,location")
+      .gte("start_date", startDate)
+      .lte("start_date", endDate)
+      .then(({data, error}) => {
+        if (error) console.error("fetch tm_calendar_events:", error.message);
+        else setCalendarDbEvents(data || []);
+      });
+  }, [view, calMonth]);
+
   const TODAY = useMemo(() => todayStr(), []);
 
   const weekDays = useMemo(() => {
@@ -244,10 +260,12 @@ export default function App() {
     const gcalMapped = gcalVisible ? gcalEvents.filter(e=>e.date).map(e=>({...e,_gcal:true,dueDate:e.date})) : [];
     console.log(`[calData] year=${year} month=${month}(0-idx) gcalEvents=${gcalEvents.length} gcalMapped=${gcalMapped.length} gcalVisible=${gcalVisible}`);
     if (gcalMapped.length) console.log("[calData] gcal sample:", gcalMapped.slice(0,3).map(e=>({title:e.title,dueDate:e.dueDate})));
+    const calDbMapped = calendarDbEvents.map(e=>({...e,_calEvent:true,dueDate:e.start_date}));
     const all = [
       ...tasks.filter(t=>!t.completed&&t.dueDate),
       ...emailTasks.filter(e=>e.dueDate).map(e=>({...e,_email:true})),
       ...gcalMapped,
+      ...calDbMapped,
     ];
     const byDate = {};
     all.forEach(t => {
@@ -259,7 +277,7 @@ export default function App() {
     });
     console.log(`[calData] byDate keys with events:`, Object.keys(byDate));
     return {daysInMonth,startPad,byDate};
-  }, [calMonth,tasks,emailTasks,gcalEvents,gcalVisible]);
+  }, [calMonth,tasks,emailTasks,gcalEvents,gcalVisible,calendarDbEvents]);
 
   // Handlers
   const addTask = () => {
@@ -520,6 +538,13 @@ export default function App() {
       if(t.calendarSource==="shared") return {bg:"rgba(123,111,170,0.15)",c:"#4A3F80",b:"rgba(123,111,170,0.5)"};
       return {bg:"rgba(74,124,111,0.15)",c:"#2A5E54",b:"rgba(74,124,111,0.5)"};
     };
+    const calEventPill = (t) => {
+      if(t.event_type==="birthday"||t.event_type==="anniversary") return {bg:"rgba(181,135,26,0.15)",c:"#8A6310",b:"rgba(181,135,26,0.5)"};
+      if(t.event_type==="appointment") return {bg:"rgba(74,124,111,0.15)",c:"#2A5E54",b:"rgba(74,124,111,0.5)"};
+      if(t.event_type==="reminder") return {bg:"rgba(185,64,64,0.10)",c:"#B94040",b:"rgba(185,64,64,0.4)"};
+      if(t.calendar_source==="shared") return {bg:"rgba(123,111,170,0.15)",c:"#4A3F80",b:"rgba(123,111,170,0.5)"};
+      return {bg:"rgba(74,124,111,0.10)",c:"#2A5E54",b:"rgba(74,124,111,0.35)"};
+    };
     return (
       <div style={{padding:`16px ${padH}px`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:gcalVisible&&gcalLastSync?8:16,flexWrap:"wrap"}}>
@@ -559,7 +584,7 @@ export default function App() {
                     {isT&&<span style={{width:5,height:5,borderRadius:"50%",background:T.gold,display:"inline-block"}}/>}{day}
                   </div>
                   {dt.slice(0,maxShow).map((t,ti)=>{
-                    const p=t._gcal?gcalPill(t):{bg:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",c:t._email?T.email:PC[t.priority]||T.textMute,b:t._email?T.email:PC[t.priority]||T.textMute};
+                    const p=t._gcal?gcalPill(t):t._calEvent?calEventPill(t):{bg:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",c:t._email?T.email:PC[t.priority]||T.textMute,b:t._email?T.email:PC[t.priority]||T.textMute};
                     return (
                       <div key={ti} title={t.title} onClick={()=>!t._gcal&&t.sectionId&&setSelectedTask(t)}
                         style={{fontSize:10,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,cursor:!t._gcal&&t.sectionId?"pointer":"default"}}
