@@ -153,6 +153,11 @@ export default function App() {
     });
   }, [tasks, TODAY]);
 
+  const sortedProjects = useMemo(() => {
+    const gen = projects.find(p => p.name === "General");
+    return gen ? [gen, ...projects.filter(p => p.id !== gen.id)] : projects;
+  }, [projects]);
+
   const visTasks = useMemo(() => {
     let t = tasks.filter(x => !x.completed);
     if (view==="today") t = t.filter(x => x.dueDate===TODAY);
@@ -265,7 +270,7 @@ export default function App() {
     );
     return (
       <div>
-        {projects.map(proj=>{
+        {sortedProjects.map(proj=>{
           const projTasks=visTasks.filter(t=>t.projectId===proj.id);
           if (!projTasks.length) return null;
           return (
@@ -315,7 +320,7 @@ export default function App() {
 
   const renderFilterPills = (padH=16) => (
     <div style={{display:"flex",gap:6,padding:`12px ${padH}px 0`,overflowX:"auto",scrollbarWidth:"none",flexShrink:0}}>
-      {[{id:"all",name:"All"},...projects.map(p=>({id:p.id,name:p.name}))].map(f=>(
+      {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>(
         <div key={f.id} onClick={()=>setProjectFilter(f.id)}
           style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",
             background:projectFilter===f.id?T.goldS:"rgba(255,255,255,0.04)",
@@ -419,7 +424,7 @@ export default function App() {
             <span style={{fontSize:13,fontWeight:700,color:T.gold,whiteSpace:"nowrap"}}>{selectedEmails.size} selected</span>
             <select value={batchProject} onChange={e=>setBatchProject(e.target.value)}
               style={{flex:1,minWidth:140,background:"rgba(0,50,98,0.6)",border:`1px solid ${T.goldB}`,color:T.text,borderRadius:8,padding:"7px 10px",fontSize:12,outline:"none"}}>
-              {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              {sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button onClick={()=>batchAssign(batchProject)}
               style={{padding:"7px 16px",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.goldB}`,color:T.gold,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>
@@ -464,7 +469,7 @@ export default function App() {
               {[
                 {label:"Priority",content:<select value={newPrio} onChange={e=>setNewPrio(Number(e.target.value))} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
                 {label:"Due Date",content:<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/>},
-                {label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+                {label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
               ].map(({label,content})=>(
                 <div key={label}>
                   <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>
@@ -498,7 +503,7 @@ export default function App() {
               {[
                 {label:"Due Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>},
                 {label:"Priority",content:<select value={selectedTask.priority} onChange={e=>updateTask(selectedTask.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                {label:"Project",content:<select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+                {label:"Project",content:<select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
               ].map(({label,content})=>(
                 <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
               ))}
@@ -513,7 +518,7 @@ export default function App() {
           <div style={{background:T.modal,borderRadius:16,border:`1px solid ${T.goldB}`,padding:24,width:400,maxWidth:"90vw",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
             <h3 style={{margin:"0 0 6px",fontSize:17,fontWeight:700,fontFamily:"'Playfair Display',serif",color:T.gold}}>Assign to Project</h3>
             <p style={{margin:"0 0 16px",fontSize:13,color:T.textMute}}>Choose where to move this task</p>
-            {projects.map(proj=>(
+            {sortedProjects.map(proj=>(
               <button key={proj.id} onClick={()=>assignEmail(assigningEmail,proj.id)}
                 style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:"transparent",border:"none",color:T.text,cursor:"pointer",borderRadius:8,fontSize:13,textAlign:"left"}}
                 onMouseEnter={e=>e.currentTarget.style.background="rgba(0,50,98,0.4)"}
@@ -577,7 +582,7 @@ export default function App() {
             <Ico d={I.plus} size={14} color={T.textSoft}/>
           </button>
         </div>
-        {projects.map(p=>{
+        {sortedProjects.map(p=>{
           const active=projectFilter===p.id&&view==="tasks";
           return (
             <div key={p.id} onClick={()=>{setProjectFilter(p.id);setView("tasks");}}
@@ -624,7 +629,7 @@ export default function App() {
           {[
             {label:"Due Date",content:<input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/>},
             {label:"Priority",content:<select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-            {label:"Project",content:<select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+            {label:"Project",content:<select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
           ].map(({label,content})=>(
             <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
           ))}
