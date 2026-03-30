@@ -158,6 +158,7 @@ export default function App() {
   const [gcalVisible, setGcalVisible] = useState(true);
   const [gcalLastSync, setGcalLastSync] = useState(null);
   const [gcalFetchKey, setGcalFetchKey] = useState(0);
+  const [gcalLoading, setGcalLoading] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const isMobile = useIsMobile();
@@ -194,6 +195,7 @@ export default function App() {
       ? `/api/gcal/events?month=${month}&bust=1`
       : `/api/gcal/events?month=${month}`;
     console.log("[gcal] fetching", url);
+    setGcalLoading(true);
     fetch(url)
       .then(r => r.json())
       .then(({ events=[], lastFetch, warning, cached }) => {
@@ -203,7 +205,8 @@ export default function App() {
         setGcalEvents(events);
         if (lastFetch) setGcalLastSync(lastFetch);
       })
-      .catch(err => { console.error("[gcal] fetch error:", err); setGcalEvents([]); });
+      .catch(err => { console.error("[gcal] fetch error:", err); setGcalEvents([]); })
+      .finally(() => setGcalLoading(false));
   }, [view, calMonth, gcalFetchKey]);
 
   const TODAY = useMemo(() => todayStr(), []);
@@ -523,10 +526,14 @@ export default function App() {
           <div style={{flex:1,textAlign:"center",fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:400,color:T.gold}}>{MONTHS[month]} {year}</div>
           <button onClick={()=>setCalMonth(p=>p.month===11?{year:p.year+1,month:0}:{...p,month:p.month+1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevR} size={16} color={T.textSoft}/></button>
           <button onClick={()=>setCalMonth({year:tY,month:tM})} style={{padding:"6px 12px",background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,color:T.textSoft,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400}}>Today</button>
-          <button onClick={()=>{ if(gcalVisible){ setGcalFetchKey(k=>k+1); } else { setGcalVisible(true); setGcalFetchKey(k=>k+1); } }} title={gcalVisible?"Refresh Google Calendar events":"Show Google Calendar events"}
+          <button onClick={()=>setGcalVisible(p=>!p)} title={gcalVisible?"Hide Google Calendar events":"Show Google Calendar events"}
             style={{padding:"6px 10px",background:gcalVisible?"rgba(74,124,111,0.15)":"rgba(44,40,32,0.06)",border:`1px solid ${gcalVisible?"rgba(74,124,111,0.45)":T.borderS}`,color:gcalVisible?"#2A5E54":T.textMute,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400,display:"flex",alignItems:"center",gap:5}}>
             <Ico d={I.recur} size={12} color={gcalVisible?"#2A5E54":T.textMute}/>
             GCal
+          </button>
+          <button onClick={()=>setGcalFetchKey(k=>k+1)} disabled={gcalLoading} title="Force-refresh Google Calendar"
+            style={{padding:"6px 8px",background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,cursor:gcalLoading?"not-allowed":"pointer",display:"flex",alignItems:"center",opacity:gcalLoading?0.5:1}}>
+            <Ico d={I.recur} size={13} color={T.textSoft} style={gcalLoading?{animation:"spin 1s linear infinite"}:{}}/>
           </button>
         </div>
         {gcalVisible&&gcalLastSync&&(
