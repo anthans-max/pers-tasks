@@ -462,10 +462,10 @@ export default function App() {
     <div style={{display:"flex",gap:6,padding:`12px ${padH}px 0`,overflowX:"auto",scrollbarWidth:"none",flexShrink:0}}>
       {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>(
         <div key={f.id} onClick={()=>setProjectFilter(f.id)}
-          style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",
-            background:projectFilter===f.id?T.forestPale:"rgba(61,46,30,0.05)",
-            border:`1px solid ${projectFilter===f.id?"rgba(45,74,53,0.3)":T.borderS}`,
-            color:projectFilter===f.id?T.forest:T.textMute,
+          style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
+            background:projectFilter===f.id?"rgba(45,74,53,0.18)":T.bg,
+            border:`1px solid ${projectFilter===f.id?"rgba(45,74,53,0.28)":T.border}`,
+            color:projectFilter===f.id?T.forest:T.textSoft,
           }}
         >{f.name}</div>
       ))}
