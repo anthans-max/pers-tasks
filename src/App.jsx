@@ -7,38 +7,44 @@ const USER_ID = import.meta.env.VITE_USER_ID ?? "placeholder-user-id";
 
 const T = {
   // backgrounds
-  bg:       "#F4F1EC",
-  bg2:      "#EDE9E1",
-  navBg:    "#EDE9E1",
-  navyDark: "#E4DFDA",
-  navyMid:  "#EDE9E1",
-  navy:     "#D0C9BF",
-  modal:    "#F4F1EC",
+  bg:         "#FAF7F2",
+  bg2:        "#F5F1E8",
+  navBg:      "#F5F1E8",
+  navyDark:   "#C8BBA5",
+  navyMid:    "#F5F1E8",
+  navy:       "#D4C9B0",
+  modal:      "#FAF7F2",
 
   // surfaces & borders
-  surface:  "rgba(44,40,32,0.04)",
-  border:   "rgba(44,40,32,0.12)",
-  borderS:  "rgba(44,40,32,0.08)",
+  surface:    "rgba(61,46,30,0.05)",
+  border:     "#E0D8CA",
+  borderS:    "rgba(61,46,30,0.10)",
 
-  // accent (replaces gold)
-  gold:  "#B5871A",
-  goldS: "rgba(181,135,26,0.10)",
-  goldB: "rgba(181,135,26,0.22)",
+  // accent — copper
+  gold:  "#B5703A",
+  goldS: "#FAF0E6",
+  goldB: "rgba(181,112,58,0.22)",
 
-  // text
-  text:     "#2C2820",
-  textSoft: "#5A544C",
-  textMute: "#A09890",
+  // text — warm brown
+  text:     "#3D2E1E",
+  textSoft: "#7A6045",
+  textMute: "#A89070",
 
   // semantic
   email:  "#4A7C6F",
   emailS: "rgba(74,124,111,0.12)",
   red:    "#B94040",
   green:  "#4A7C6F",
+
+  // Lotus forest greens
+  forest:     "#2D4A35",
+  forestMid:  "#3D6348",
+  forestPale: "#EAF2EC",
+  footerBg:   "#1A1A18",
 };
 
-const PC = { 1:"#B94040", 2:"#B5871A", 3:"#4A7C6F", 4:"rgba(44,40,32,0.18)" };
-const PG = { 1:"rgba(185,64,64,0.12)", 2:"rgba(181,135,26,0.10)", 3:"rgba(74,124,111,0.10)", 4:"transparent" };
+const PC = { 1:"#B94040", 2:"#B5703A", 3:"#3D6348", 4:"#A89070" };
+const PG = { 1:"rgba(185,64,64,0.12)", 2:"#FAF0E6", 3:"#EAF2EC", 4:"rgba(61,46,30,0.05)" };
 const PL = { 1:"Urgent", 2:"High", 3:"Medium", 4:"None" };
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -319,8 +325,33 @@ export default function App() {
 
   // ── Shared Components ────────────────────────────────────────
 
-  const GoldBar = () => (
-    <div style={{height:3,background:"#2C2820",flexShrink:0}} />
+  // Desktop app header — "LotusList" branding with nav dots
+  const GoldBar = () => {
+    const labels = {tasks:"All Tasks",today:"Today",calendar:"Calendar",email:"Email Capture"};
+    const views = ["tasks","today","calendar","email"];
+    return (
+      <div style={{background:T.bg,borderBottom:`1px solid ${T.border}`,padding:"0 28px",height:54,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,zIndex:100}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,display:"flex",alignItems:"baseline",gap:1}}>
+          Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <span style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",letterSpacing:"0.15em",textTransform:"uppercase",color:T.textMute,fontWeight:500}}>{labels[view]||"All Tasks"}</span>
+          <div style={{display:"flex",gap:5,alignItems:"center"}}>
+            {views.map(k=>(
+              <div key={k} onClick={()=>setView(k)} style={{width:7,height:7,borderRadius:"50%",background:view===k?T.text:T.border,cursor:"pointer",transition:"background 0.15s"}}/>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Footer bar — "Powered by Lotus AI" with logo
+  const PoweredFooter = () => (
+    <div style={{position:"fixed",bottom:0,left:0,right:0,height:36,zIndex:490,background:T.footerBg,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+      <img src="/lotus-logo.png" width="14" height="14" alt="Lotus" style={{opacity:0.6}}/>
+      <span style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.28em",textTransform:"uppercase",color:"rgba(255,255,255,0.45)"}}>Powered by Lotus AI</span>
+    </div>
   );
 
   const inp = {background:"rgba(44,40,32,0.06)",border:`1px solid ${T.border}`,color:T.text,borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
@@ -331,11 +362,11 @@ export default function App() {
     return (
       <div onClick={()=>setSelectedTask(sel?null:task)}
         style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 16px",borderRadius:11,
-          background:sel?"rgba(44,40,32,0.10)":"#EDE9E1",
+          background:sel?"rgba(61,46,30,0.10)":T.bg2,
           border:`1px solid ${sel?T.goldB:T.borderS}`,
           position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:4,transition:"all 0.15s"}}
-        onMouseEnter={e=>{e.currentTarget.style.background="#E8E3DB";e.currentTarget.style.borderColor="rgba(181,135,26,0.22)";}}
-        onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(44,40,32,0.10)":"#EDE9E1";e.currentTarget.style.borderColor=sel?"rgba(181,135,26,0.22)":"rgba(44,40,32,0.08)";}}
+        onMouseEnter={e=>{e.currentTarget.style.background="#EDE9DF";e.currentTarget.style.borderColor=T.navyDark;}}
+        onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(61,46,30,0.10)":T.bg2;e.currentTarget.style.borderColor=sel?T.goldB:T.borderS;}}
       >
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:PC[task.priority],borderRadius:"3px 0 0 3px"}} />
         <button onClick={e=>{e.stopPropagation();toggleDone(task.id);}}
@@ -347,7 +378,7 @@ export default function App() {
           <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text}}>{task.title}</div>
           <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
             {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
-            {task.dueDate&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:td?T.green:"rgba(253,181,21,0.7)",display:"flex",alignItems:"center",gap:3}}>
+            {task.dueDate&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:td?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
               📅 {fmtDate(task.dueDate)}{task.recurring&&<Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/>}
             </span>}
             {task.subtasks>0&&<span style={{fontSize:11,color:T.textMute}}>{task.subtasksDone}/{task.subtasks}</span>}
@@ -387,7 +418,7 @@ export default function App() {
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 0 6px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}>
                   <div style={{width:7,height:7,borderRadius:"50%",background:proj.color||T.gold}}/>
-                  <span style={{fontSize:10,fontWeight:700,letterSpacing:"1.8px",textTransform:"uppercase",color:"rgba(253,181,21,0.38)"}}>{proj.name}</span>
+                  <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"1.8px",textTransform:"uppercase",color:T.textMute}}>{proj.name}</span>
                 </div>
                 <span style={{fontSize:11,color:T.textMute,background:"rgba(255,255,255,0.05)",padding:"1px 8px",borderRadius:8}}>{projTasks.length}</span>
               </div>
@@ -404,12 +435,12 @@ export default function App() {
       {weekDays.map(d=>(
         <div key={d.date} onClick={()=>{setDayFilter(dayFilter===d.date?null:d.date);if(view!=="tasks")setView("tasks");}}
           style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:compact?56:46,padding:compact?"8px 12px":"8px 6px",borderRadius:10,cursor:"pointer",transition:"all 0.15s",
-            background:dayFilter===d.date?`linear-gradient(180deg,${T.navy},rgba(0,50,98,0.6))`:"transparent",
-            border:`1px solid ${dayFilter===d.date?T.goldB:"transparent"}`,
+            background:dayFilter===d.date?T.forestPale:"transparent",
+            border:`1px solid ${dayFilter===d.date?"rgba(45,74,53,0.3)":"transparent"}`,
           }}
         >
-          <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.6px",color:(dayFilter===d.date||d.isToday)?"rgba(253,181,21,0.7)":T.textMute}}>{d.name}</div>
-          <div style={{fontSize:18,fontWeight:700,color:(dayFilter===d.date||d.isToday)?T.gold:T.textMute}}>{d.num}</div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.6px",color:(dayFilter===d.date||d.isToday)?T.forest:T.textMute}}>{d.name}</div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:(dayFilter===d.date||d.isToday)?T.gold:T.textMute}}>{d.num}</div>
           {d.hasTasks?<div style={{width:4,height:4,borderRadius:"50%",background:T.gold}}/>:<div style={{width:4,height:4}}/>}
         </div>
       ))}
@@ -418,8 +449,8 @@ export default function App() {
         <div style={{display:"flex",gap:20,alignItems:"center",padding:"0 4px"}}>
           {[{n:todayCount,l:"Today",c:T.gold},{n:openCount,l:"Open",c:T.textSoft},{n:emailTasks.length,l:"Emails",c:T.email}].map(({n,l,c},i)=>(
             <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,lineHeight:1}}>{n}</div>
-              <div style={{fontSize:9,color:"rgba(253,181,21,0.4)",textTransform:"uppercase",letterSpacing:"0.8px",marginTop:2}}>{l}</div>
+              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:c,fontWeight:600,lineHeight:1}}>{n}</div>
+              <div style={{fontFamily:"'Syne',sans-serif",fontSize:9,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.8px",marginTop:2}}>{l}</div>
             </div>
           ))}
         </div>
@@ -432,9 +463,9 @@ export default function App() {
       {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>(
         <div key={f.id} onClick={()=>setProjectFilter(f.id)}
           style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:600,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",
-            background:projectFilter===f.id?T.goldS:"rgba(255,255,255,0.04)",
-            border:`1px solid ${projectFilter===f.id?T.goldB:T.borderS}`,
-            color:projectFilter===f.id?T.gold:T.textMute,
+            background:projectFilter===f.id?T.forestPale:"rgba(61,46,30,0.05)",
+            border:`1px solid ${projectFilter===f.id?"rgba(45,74,53,0.3)":T.borderS}`,
+            color:projectFilter===f.id?T.forest:T.textMute,
           }}
         >{f.name}</div>
       ))}
@@ -465,7 +496,7 @@ export default function App() {
             const dt=day?(byDate[day]||[]):[];
             const maxShow=padH>0?3:2;
             return (
-              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(0,50,98,0.2)":"transparent",border:`1px solid ${isT?T.goldB:day?"rgba(253,181,21,0.07)":"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0}}>
+              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0}}>
                 {day&&<>
                   <div style={{fontSize:12,fontWeight:isT?800:600,color:isT?T.gold:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
                     {isT&&<span style={{width:5,height:5,borderRadius:"50%",background:T.gold,display:"inline-block"}}/>}{day}
@@ -506,10 +537,10 @@ export default function App() {
             {emailTasks.map(et=>{
               const checked = selectedEmails.has(et.id);
               return (
-                <div key={et.id} style={{background:"#EDE9E1",border:`1px solid ${checked?T.goldB:T.emailS}`,borderLeft:`3px solid ${checked?T.gold:T.email}`,borderRadius:12,padding:"14px 16px",transition:"border-color 0.15s"}}>
+                <div key={et.id} style={{background:T.bg2,border:`1px solid ${checked?T.goldB:T.emailS}`,borderLeft:`3px solid ${checked?T.gold:T.email}`,borderRadius:12,padding:"14px 16px",transition:"border-color 0.15s"}}>
                   <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
                     <button onClick={()=>toggleEmailSelect(et.id)}
-                      style={{width:20,height:20,minWidth:20,borderRadius:5,border:`2px solid ${checked?T.gold:"rgba(253,181,21,0.3)"}`,background:checked?T.gold:"transparent",cursor:"pointer",padding:0,flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}
+                      style={{width:20,height:20,minWidth:20,borderRadius:5,border:`2px solid ${checked?T.gold:T.borderS}`,background:checked?T.gold:"transparent",cursor:"pointer",padding:0,flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}
                     >
                       {checked&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </button>
@@ -519,7 +550,7 @@ export default function App() {
                       <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                         <span style={{fontSize:11,background:T.emailS,color:T.email,padding:"2px 8px",borderRadius:8,fontWeight:600}}>From: {et.emailFrom}</span>
                         <span style={{fontSize:11,background:PG[et.priority],color:PC[et.priority],padding:"2px 8px",borderRadius:8,fontWeight:600}}>{PL[et.priority]}</span>
-                        {et.dueDate&&<span style={{fontSize:11,color:isOverdue(et.dueDate)?T.red:"rgba(253,181,21,0.7)",fontWeight:600}}>📅 {fmtDate(et.dueDate)}</span>}
+                        {et.dueDate&&<span style={{fontSize:11,color:isOverdue(et.dueDate)?T.red:T.textMute,fontWeight:600}}>📅 {fmtDate(et.dueDate)}</span>}
                       </div>
                     </div>
                   </div>
@@ -536,7 +567,7 @@ export default function App() {
               {sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button onClick={()=>batchAssign(batchProject)}
-              style={{padding:"7px 16px",background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",whiteSpace:"nowrap",fontFamily:"'Jost', sans-serif"}}>
+              style={{padding:"7px 16px",background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",whiteSpace:"nowrap",fontFamily:"'Jost', sans-serif"}}>
               Assign
             </button>
             <button onClick={batchDismiss}
@@ -560,7 +591,7 @@ export default function App() {
         />
         <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
           <button onClick={onClose} style={{padding:"8px 16px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
-          <button onClick={onSave} style={{padding:"10px 24px",background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:6,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Create</button>
+          <button onClick={onSave} style={{padding:"10px 24px",background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Create</button>
         </div>
       </div>
     </div>
@@ -588,7 +619,7 @@ export default function App() {
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <button onClick={()=>setAddModal(false)} style={{padding:"10px 20px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
-              <button onClick={addTask} style={{padding:"10px 28px",background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:6,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Add Task</button>
+              <button onClick={addTask} style={{padding:"10px 28px",background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Add Task</button>
             </div>
           </div>
         </div>
@@ -617,7 +648,7 @@ export default function App() {
                 <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
               ))}
             </div>
-            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:8,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
+            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
           </div>
         </div>
       )}
@@ -651,33 +682,33 @@ export default function App() {
     <div style={{width:248,minWidth:248,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:"20px 20px 14px",borderBottom:`1px solid ${T.borderS}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-          <div style={{width:38,height:38,borderRadius:"50%",background:"#2C2820",border:`2px solid ${T.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:500,fontSize:14,color:T.gold,flexShrink:0}}>A</div>
+          <div style={{width:38,height:38,borderRadius:"50%",background:T.forest,border:`2px solid ${T.forestMid}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:14,color:T.bg,flexShrink:0,fontFamily:"'Syne',sans-serif"}}>A</div>
           <div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,color:T.gold,fontWeight:600}}>Anthan</div>
-            <div style={{fontSize:11,color:T.textMute}}>Task Manager</div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:T.text,fontWeight:600}}>Anthan</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:11,color:T.textMute,letterSpacing:"0.05em"}}>Lotus List</div>
           </div>
         </div>
         <button onClick={()=>{setNewProject(projectFilter==="all"?projects[0]?.id:projectFilter);setAddModal(true);}}
-          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 14px",background:"#2C2820",border:"none",borderRadius:6,color:"#F4F1EC",fontSize:13,fontWeight:400,letterSpacing:"0.05em",cursor:"pointer",fontFamily:"'Jost', sans-serif"}}>
-          <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(244,241,236,0.15)",color:"#F4F1EC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:400,flexShrink:0}}>+</div>
+          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:T.forest,border:"none",borderRadius:100,color:T.bg,fontSize:13,fontWeight:400,letterSpacing:"0.12em",cursor:"pointer",fontFamily:"'Jost', sans-serif",justifyContent:"center"}}>
+          <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(250,247,242,0.18)",color:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:400,flexShrink:0}}>+</div>
           Add task
         </button>
       </div>
 
       <div style={{padding:"12px 12px 4px",flexShrink:0}}>
-        <div style={{fontSize:10,fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute,padding:"0 8px 8px"}}>Views</div>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute,padding:"0 8px 8px"}}>Views</div>
         {[
           {key:"tasks",icon:I.tasks,label:"All Tasks",badge:openCount,badgeBg:T.surface,badgeC:T.textMute},
-          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.gold,badgeC:"#F4F1EC"},
+          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.forest,badgeC:T.bg},
           {key:"calendar",icon:I.cal,label:"Calendar",badge:null},
-          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:"#F4F1EC"},
+          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:T.bg},
         ].map(n=>(
           <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,color:view===n.key?T.gold:T.textSoft,background:view===n.key?T.goldS:"transparent",borderLeft:`3px solid ${view===n.key?T.gold:"transparent"}`,transition:"all 0.15s"}}
-            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(44,40,32,0.04)";e.currentTarget.style.color=T.text;}}}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,color:view===n.key?T.forest:T.textSoft,background:view===n.key?T.forestPale:"transparent",borderLeft:`3px solid ${view===n.key?T.forest:"transparent"}`,transition:"all 0.15s"}}
+            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(61,46,30,0.05)";e.currentTarget.style.color=T.text;}}}
             onMouseLeave={e=>{if(view!==n.key){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.textSoft;}}}
           >
-            <Ico d={n.icon} size={16} color={view===n.key?T.gold:T.textMute}/>
+            <Ico d={n.icon} size={16} color={view===n.key?T.forest:T.textMute}/>
             <span style={{flex:1}}>{n.label}</span>
             {n.badge?<span style={{fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:10,background:n.badgeBg,color:n.badgeC}}>{n.badge}</span>:null}
           </div>
@@ -686,7 +717,7 @@ export default function App() {
 
       <div style={{flex:1,overflowY:"auto",padding:"8px 12px",borderTop:`1px solid ${T.borderS}`,marginTop:6}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 8px 8px"}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute}}>Projects</div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute}}>Projects</div>
           <button onClick={()=>{setModalName("");setShowProjectModal(true);}} style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0.5}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
             <Ico d={I.plus} size={14} color={T.textSoft}/>
           </button>
@@ -722,7 +753,7 @@ export default function App() {
     return (
       <div style={{width:320,minWidth:320,background:T.bg2,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{padding:"18px 20px 14px",borderBottom:`1px solid ${T.borderS}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <div style={{fontSize:11,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1}}>Task Detail</div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.15em"}}>Task Detail</div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={()=>deleteTask(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:6,borderRadius:6}} onMouseEnter={e=>e.currentTarget.style.background="rgba(185,64,64,0.10)"} onMouseLeave={e=>e.currentTarget.style.background="none"}><Ico d={I.trash} size={15} color={T.red}/></button>
             <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={15} color={T.textMute}/></button>
@@ -748,7 +779,7 @@ export default function App() {
           </div>}
         </div>
         <div style={{padding:"14px 20px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
-          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:"#2C2820",border:"none",color:"#F4F1EC",borderRadius:8,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
+          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
         </div>
       </div>
     );
@@ -760,8 +791,8 @@ export default function App() {
     return (
       <div style={{padding:"18px 28px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.borderS}`,flexShrink:0}}>
         <div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:400,color:T.gold}}>{titles[view]||"Tasks"}</div>
-          <div style={{fontSize:12,color:T.textMute,marginTop:2,textTransform:"uppercase",letterSpacing:"0.3px"}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:600,color:T.text}}>{titles[view]||"Tasks"}</div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:11,color:T.textMute,marginTop:2,textTransform:"uppercase",letterSpacing:"0.3px"}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,border:`1px solid ${T.borderS}`,borderRadius:8,padding:"7px 12px",width:200}}>
@@ -775,18 +806,17 @@ export default function App() {
 
   // ── Mobile Top Bar ───────────────────────────────────────────
   const renderTopBar = () => (
-    <div style={{padding:"16px 20px 12px",background:`linear-gradient(180deg,${T.bg2},${T.bg})`,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
-      <div>
-        <div style={{fontSize:11,color:"rgba(253,181,21,0.55)",letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:2}}>Good morning</div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold,fontWeight:600,letterSpacing:"-0.3px"}}>Anthan</div>
+    <div style={{padding:"0 20px",height:54,background:T.bg,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,display:"flex",alignItems:"baseline",gap:1}}>
+        Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
       </div>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <button onClick={()=>setView("email")} style={{position:"relative",width:36,height:36,borderRadius:"50%",background:T.goldS,border:`1px solid ${T.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15}}>
+        <button onClick={()=>setView("email")} style={{position:"relative",width:36,height:36,borderRadius:"50%",background:T.forestPale,border:`1px solid rgba(45,74,53,0.25)`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15}}>
           ✉️
           {emailTasks.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:T.red,color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{emailTasks.length}</span>}
         </button>
-        <button onClick={()=>setAddModal(true)} style={{width:36,height:36,borderRadius:"50%",background:T.goldS,border:`1px solid ${T.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:T.gold,fontWeight:700,lineHeight:1}}>+</button>
-        <div style={{width:36,height:36,borderRadius:"50%",background:"#2C2820",border:`2px solid ${T.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:500,fontSize:13,color:T.gold}}>A</div>
+        <button onClick={()=>setAddModal(true)} style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:T.bg,fontWeight:700,lineHeight:1}}>+</button>
+        <div style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:`2px solid ${T.forestMid}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:13,color:T.bg,fontFamily:"'Syne',sans-serif"}}>A</div>
       </div>
     </div>
   );
@@ -796,8 +826,8 @@ export default function App() {
       <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,${T.gold},transparent)`}}/>
       {[{n:todayCount,l:"Due Today",c:T.gold},{n:openCount,l:"Open",c:T.textSoft},{n:emailTasks.length,l:"Emails",c:T.email}].map(({n,l,c},i,arr)=>(
         <div key={l} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${T.goldB}`:"none"}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,color:c,fontWeight:700,lineHeight:1}}>{n}</div>
-          <div style={{fontSize:10,color:"rgba(253,181,21,0.45)",textTransform:"uppercase",letterSpacing:"0.8px",marginTop:4,fontWeight:600}}>{l}</div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,color:c,fontWeight:600,lineHeight:1}}>{n}</div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.8px",marginTop:4,fontWeight:500}}>{l}</div>
         </div>
       ))}
     </div>
@@ -807,9 +837,9 @@ export default function App() {
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:T.navBg,borderTop:`1px solid ${T.border}`,display:"grid",gridTemplateColumns:"repeat(4,1fr)",padding:"10px 0 22px",backdropFilter:"blur(20px)",zIndex:100}}>
       {[{key:"tasks",ico:I.tasks,label:"Tasks"},{key:"today",ico:I.today,label:"Today"},{key:"calendar",ico:I.cal,label:"Calendar"},{key:"email",ico:I.mail,label:"Email"}].map(n=>(
         <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
-          <Ico d={n.ico} size={20} color={view===n.key?T.gold:T.textMute}/>
-          <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase",color:view===n.key?T.gold:T.textMute}}>{n.label}</span>
-          {view===n.key&&<div style={{width:4,height:4,borderRadius:"50%",background:T.gold,marginTop:1}}/>}
+          <Ico d={n.ico} size={20} color={view===n.key?T.forest:T.textMute}/>
+          <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",color:view===n.key?T.forest:T.textMute}}>{n.label}</span>
+          {view===n.key&&<div style={{width:4,height:4,borderRadius:"50%",background:T.forest,marginTop:1}}/>}
         </div>
       ))}
     </div>
@@ -827,7 +857,7 @@ export default function App() {
           {renderMainHeader()}
           {(view==="tasks"||view==="today")&&renderWeekStrip(true)}
           {(view==="tasks"||view==="today")&&renderFilterPills(28)}
-          <div style={{flex:1,overflowY:"auto",padding:"0 28px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"0 28px 52px"}}>
             {view==="tasks"&&renderFeed(false)}
             {view==="today"&&renderFeed(true)}
             {view==="calendar"&&renderCalendar(0)}
@@ -836,13 +866,13 @@ export default function App() {
         </div>
         {selectedTask&&renderDetailPanel()}
       </div>
+      <PoweredFooter/>
       {renderModals()}
     </div>
   );
 
   return (
-    <div style={{...base,maxWidth:430,margin:"0 auto",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
-      <GoldBar/>
+    <div style={{...base,maxWidth:430,margin:"0 auto",height:"100vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
       {renderTopBar()}
       {(view==="tasks"||view==="today")&&renderWeekStrip(false)}
       <div style={{flex:1,overflowY:"auto",paddingBottom:80}}>
