@@ -553,7 +553,7 @@ export default function App() {
             const dt=day?(byDate[day]||[]):[];
             const maxShow=padH>0?3:2;
             return (
-              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0}}>
+              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden"}}>
                 {day&&<>
                   <div style={{fontSize:12,fontWeight:isT?800:600,color:isT?T.gold:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
                     {isT&&<span style={{width:5,height:5,borderRadius:"50%",background:T.gold,display:"inline-block"}}/>}{day}
