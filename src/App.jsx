@@ -198,9 +198,10 @@ export default function App() {
     setGcalLoading(true);
     fetch(url)
       .then(r => r.json())
-      .then(({ events=[], lastFetch, warning, cached }) => {
+      .then(({ events=[], lastFetch, warning, cached, debug }) => {
         if (warning) console.warn("[gcal] warning:", warning);
         console.log(`[gcal] response: ${events.length} events, cached=${cached}, lastFetch=${lastFetch ? new Date(lastFetch).toLocaleTimeString() : null}`);
+        if (debug) console.log("[gcal] debug:", debug);
         if (events.length) console.log("[gcal] first 5 events:", events.slice(0,5));
         setGcalEvents(events);
         if (lastFetch) setGcalLastSync(lastFetch);

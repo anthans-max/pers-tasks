@@ -4,8 +4,20 @@ import { google } from "googleapis";
 const cache = { data: null, ts: 0, month: null };
 const CACHE_TTL = 5 * 60 * 1000; // temporarily reduced to 5 min for verification
 
-const PRIMARY_ID = "primary";
+const PRIMARY_ID = "anthans@gmail.com";
 const SHARED_ID = "m8q4m4pbci3a481mo4tqjtvpms@group.calendar.google.com";
+
+// Returns the UTC offset string for America/Los_Angeles at a given moment, e.g. "-07:00" or "-08:00"
+function getLAOffsetString(date) {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "America/Los_Angeles",
+    timeZoneName: "shortOffset",
+  }).formatToParts(date);
+  const tzPart = parts.find((p) => p.type === "timeZoneName")?.value || "GMT-7";
+  const match = tzPart.match(/GMT([+-])(\d+)/);
+  if (!match) return "-07:00";
+  return `${match[1]}${String(match[2]).padStart(2, "0")}:00`;
+}
 
 export default async function handler(req, res) {
   // Only allow GET
@@ -43,16 +55,24 @@ export default async function handler(req, res) {
     const calendar = google.calendar({ version: "v3", auth: oauth2 });
 
     const [year, mo] = month.split("-").map(Number);
-    // Use Date.UTC to avoid server-timezone drift on timeMin/timeMax
-    const timeMin = new Date(Date.UTC(year, mo - 1, 1)).toISOString();
-    const timeMax = new Date(Date.UTC(year, mo, 1)).toISOString(); // exclusive: first moment of next month
-    console.log(`[gcal] fetching month=${month} timeMin=${timeMin} timeMax=${timeMax}`);
+    const lastDay = new Date(year, mo, 0).getDate(); // last day of month
+
+    // Use explicit America/Los_Angeles offset so timeMin/timeMax match local midnight
+    const startOffset = getLAOffsetString(new Date(year, mo - 1, 1));
+    const endOffset = getLAOffsetString(new Date(year, mo - 1, lastDay));
+    const mm = String(mo).padStart(2, "0");
+    const timeMin = `${year}-${mm}-01T00:00:00${startOffset}`;
+    const timeMax = `${year}-${mm}-${String(lastDay).padStart(2, "0")}T23:59:59${endOffset}`;
+
+    const debugInfo = { timeMin, timeMax, calendars: [PRIMARY_ID, SHARED_ID] };
+    console.log("[gcal] request debug:", debugInfo);
 
     const calendars = [
       { id: PRIMARY_ID, source: "primary" },
       { id: SHARED_ID, source: "shared" },
     ];
 
+    const rawCounts = {};
     const fetched = await Promise.all(
       calendars.map(async ({ id, source }) => {
         try {
@@ -65,7 +85,9 @@ export default async function handler(req, res) {
             maxResults: 250,
           });
           const items = resp.data.items || [];
-          console.log(`[gcal] calendar=${source} raw items=${items.length}`, items.map(e => ({ summary: e.summary, start: e.start })));
+          rawCounts[source] = items.length;
+          console.log(`[gcal] calendar=${source} (${id}) raw items=${items.length}`);
+          if (items.length) console.log(`[gcal] ${source} sample:`, items.slice(0,3).map(e => ({ summary: e.summary, start: e.start })));
           return items.map((event) => ({
             id: event.id,
             title: event.summary || "(No title)",
@@ -77,6 +99,7 @@ export default async function handler(req, res) {
             isRecurring: !!event.recurringEventId,
           }));
         } catch (calErr) {
+          rawCounts[source] = `ERROR: ${calErr.message}`;
           console.error(`[gcal] failed to fetch calendar ${id}:`, calErr.message);
           return [];
         }
@@ -84,7 +107,7 @@ export default async function handler(req, res) {
     );
 
     const events = fetched.flat().filter((e) => e.date);
-    console.log(`[gcal] total events after flatten+filter: ${events.length}`, events.slice(0, 5));
+    console.log(`[gcal] total events after flatten+filter: ${events.length}`);
 
     // Update cache
     cache.data = events;
@@ -92,7 +115,7 @@ export default async function handler(req, res) {
     cache.month = month;
 
     res.setHeader("Cache-Control", "no-store");
-    res.json({ events, cached: false, lastFetch: now });
+    res.json({ events, cached: false, lastFetch: now, debug: { ...debugInfo, rawCounts } });
   } catch (err) {
     console.error("[gcal] handler error:", err);
     res.json({ events: [], warning: err.message, lastFetch: null });
