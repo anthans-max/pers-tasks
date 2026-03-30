@@ -349,7 +349,7 @@ export default function App() {
   // Footer bar — "Powered by Lotus AI" with logo
   const PoweredFooter = () => (
     <div style={{position:"fixed",bottom:0,left:0,right:0,height:36,zIndex:490,background:T.footerBg,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-      <img src="/lotus-logo.png" width="14" height="14" alt="Lotus" style={{opacity:0.6}}/>
+      <img src="/lotus-logo.png" alt="Lotus" style={{height:20,width:"auto"}}/>
       <span style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.28em",textTransform:"uppercase",color:"rgba(255,255,255,0.45)"}}>Powered by Lotus AI</span>
     </div>
   );
