@@ -2,7 +2,7 @@ import { google } from "googleapis";
 
 // In-memory cache — survives warm lambda invocations (30-min TTL)
 const cache = { data: null, ts: 0, month: null };
-const CACHE_TTL = 30 * 60 * 1000;
+const CACHE_TTL = 5 * 60 * 1000; // temporarily reduced to 5 min for verification
 
 const PRIMARY_ID = "primary";
 const SHARED_ID = "m8q4m4pbci3a481mo4tqjtvpms@group.calendar.google.com";

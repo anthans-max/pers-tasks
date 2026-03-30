@@ -501,7 +501,7 @@ export default function App() {
     while(cells.length%7!==0) cells.push(null);
     const gcalPill = (t) => {
       const lower=(t.title||"").toLowerCase();
-      if(lower.includes("birthday")||lower.includes("anniversary")) return {bg:"rgba(181,135,26,0.15)",c:"#8A6310",b:"rgba(181,135,26,0.5)"};
+      if(lower.includes("birthday")||lower.includes("bday")||lower.includes("anniversary")||lower.includes("anniv")) return {bg:"rgba(181,135,26,0.15)",c:"#8A6310",b:"rgba(181,135,26,0.5)"};
       if(t.calendarSource==="shared") return {bg:"rgba(123,111,170,0.15)",c:"#4A3F80",b:"rgba(123,111,170,0.5)"};
       return {bg:"rgba(74,124,111,0.15)",c:"#2A5E54",b:"rgba(74,124,111,0.5)"};
     };
