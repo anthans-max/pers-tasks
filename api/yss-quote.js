@@ -27,25 +27,36 @@ export default async function handler(req, res) {
     if (quoteMatch) {
       const block = quoteMatch[1];
 
-      // Extract topic from h3
-      const h3 = block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/);
-      if (h3) topic = h3[1].replace(/<[^>]+>/g, "").trim();
-
-      // Extract quote paragraphs (exclude p.quoteby)
-      const paragraphs = [...block.matchAll(/<p(?![^>]*quoteby)[^>]*>([\s\S]*?)<\/p>/g)];
-      quote = paragraphs
-        .map((m) => m[1].replace(/<[^>]+>/g, "").trim())
-        .filter(Boolean)
-        .join(" ");
-
-      // Extract attribution from p.quoteby or h4
-      const quoteby = block.match(/<p[^>]*class="[^"]*quoteby[^"]*"[^>]*>([\s\S]*?)<\/p>/);
-      if (quoteby) {
-        attribution = quoteby[1].replace(/<[^>]+>/g, "").trim();
-      } else {
-        const h4 = block.match(/<h4[^>]*>([\s\S]*?)<\/h4>/);
-        if (h4) attribution = h4[1].replace(/<[^>]+>/g, "").trim();
+      // Extract topic from h4 text (before the <small> date tag)
+      const h4 = block.match(/<h4[^>]*>([\s\S]*?)<\/h4>/);
+      if (h4) {
+        const h4Clean = h4[1].replace(/<small[^>]*>[\s\S]*?<\/small>/g, "").replace(/<[^>]+>/g, "").trim();
+        if (h4Clean) topic = h4Clean;
       }
+
+      // All <p> tags in order
+      const paragraphs = [...block.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)];
+
+      // First <p> = quote text, remaining <p> = attribution
+      // Attribution typically starts with a dash character (–, —, &#8211;)
+      const quoteParts = [];
+      const attrParts = [];
+      let hitAttribution = false;
+      for (const m of paragraphs) {
+        const text = m[1].replace(/<[^>]+>/g, "").trim();
+        if (!text) continue;
+        // Detect attribution: starts with dash/ndash/mdash or contains author name pattern
+        if (!hitAttribution && /^[\u2013\u2014\-–—]|^&#821[012];/.test(m[1].trim())) {
+          hitAttribution = true;
+        }
+        if (hitAttribution) {
+          attrParts.push(text);
+        } else {
+          quoteParts.push(text);
+        }
+      }
+      quote = quoteParts.join(" ");
+      attribution = attrParts.join(" ").replace(/^[\u2013\u2014\-–—]\s*/, "");
     }
 
     // Decode HTML entities via a map + numeric entity handler
@@ -66,7 +77,7 @@ export default async function handler(req, res) {
         return isNaN(num) ? m : String.fromCodePoint(num);
       });
     quote = decodeEntities(quote);
-    attribution = decodeEntities(attribution);
+    attribution = decodeEntities(attribution).replace(/^[\u2013\u2014\-–—]\s*/, "");
 
     const result = { quote, attribution, topic };
     cache.data = result;

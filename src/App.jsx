@@ -976,14 +976,17 @@ export default function App() {
         {/* YSS Quote */}
         {yssQuote.quote && (
           <div style={{maxWidth:620,width:"100%",textAlign:"left",marginBottom:48,padding:"0 8px"}}>
-            <div style={{display:"flex",alignItems:"flex-start",gap:16,marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
               {/* Small lotus icon */}
-              <svg width="36" height="36" viewBox="0 0 64 64" fill="none" style={{flexShrink:0,marginTop:2}}>
+              <svg width="36" height="36" viewBox="0 0 64 64" fill="none" style={{flexShrink:0}}>
                 <path d="M32 18C32 18 24 28 24 37C24 43 27.6 47.5 32 49C36.4 47.5 40 43 40 37C40 28 32 18 32 18Z" fill={T.gold} opacity="0.5"/>
                 <path d="M14 38C14 38 22 32 32 36C42 32 50 38 50 38C50 38 44 46 32 46C20 46 14 38 14 38Z" fill={T.gold} opacity="0.35"/>
               </svg>
-              <div>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                 <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:600,letterSpacing:"0.18em",textTransform:"uppercase",color:T.gold}}>Spiritual Thought of the Day</div>
+                {yssQuote.topic && (
+                  <span style={{fontSize:"0.6rem",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",border:`1.5px solid ${T.text}`,borderRadius:4,padding:"2px 8px",color:T.text}}>{yssQuote.topic}</span>
+                )}
               </div>
             </div>
             <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.2rem",fontStyle:"italic",lineHeight:1.7,color:T.text,marginBottom:14}}>
