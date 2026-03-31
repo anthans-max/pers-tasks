@@ -48,9 +48,25 @@ export default async function handler(req, res) {
       }
     }
 
-    // Clean up unicode/HTML entities
-    quote = quote.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&").replace(/&nbsp;/g, " ");
-    attribution = attribution.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&").replace(/&nbsp;/g, " ");
+    // Decode HTML entities via a map + numeric entity handler
+    const entityMap = {
+      "&quot;": '"', "&#039;": "'", "&amp;": "&", "&nbsp;": " ",
+      "&ldquo;": "\u201C", "&rdquo;": "\u201D", "&lsquo;": "\u2018", "&rsquo;": "\u2019",
+      "&ndash;": "\u2013", "&mdash;": "\u2014", "&hellip;": "\u2026",
+      "&lt;": "<", "&gt;": ">", "&apos;": "'",
+    };
+    const decodeEntities = (s) =>
+      s.replace(/&[#a-zA-Z0-9]+;/g, (m) => {
+        if (entityMap[m]) return entityMap[m];
+        const num = m.startsWith("&#x")
+          ? parseInt(m.slice(3, -1), 16)
+          : m.startsWith("&#")
+            ? parseInt(m.slice(2, -1), 10)
+            : NaN;
+        return isNaN(num) ? m : String.fromCodePoint(num);
+      });
+    quote = decodeEntities(quote);
+    attribution = decodeEntities(attribution);
 
     const result = { quote, attribution, topic };
     cache.data = result;
