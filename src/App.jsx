@@ -162,6 +162,8 @@ export default function App() {
   const [gcalLoading, setGcalLoading] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
+  const [showMorning, setShowMorning] = useState(true);
+  const [yssQuote, setYssQuote] = useState({ quote: "", attribution: "", topic: "" });
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -188,6 +190,14 @@ export default function App() {
       })));
     });
   }, []);
+
+  useEffect(() => {
+    if (!showMorning) return;
+    fetch("/api/yss-quote")
+      .then(r => r.json())
+      .then(data => { if (data.quote) setYssQuote(data); })
+      .catch(err => console.error("[yss] fetch error:", err));
+  }, [showMorning]);
 
   useEffect(() => {
     if (view !== "calendar") return;
@@ -932,6 +942,82 @@ export default function App() {
       ))}
     </div>
   );
+
+  // ── MORNING SPLASH ─────────────────────────────────────────
+  if (showMorning) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-US", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+    return (
+      <div style={{
+        background:T.bg, color:T.text, fontFamily:"'Jost', sans-serif",
+        minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center",
+        justifyContent:"center", padding:"40px 24px", textAlign:"center",
+      }}>
+        {/* Wordmark */}
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,marginBottom:32,display:"flex",alignItems:"baseline",gap:1}}>
+          Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
+        </div>
+
+        {/* Lotus SVG */}
+        <svg width="56" height="56" viewBox="0 0 64 64" fill="none" style={{marginBottom:28}}>
+          <path d="M32 12C32 12 20 24 20 36C20 44 25.4 50 32 52C38.6 50 44 44 44 36C44 24 32 12 32 12Z" fill={T.forestMid} opacity="0.18"/>
+          <path d="M32 18C32 18 24 28 24 37C24 43 27.6 47.5 32 49C36.4 47.5 40 43 40 37C40 28 32 18 32 18Z" fill={T.forestMid} opacity="0.35"/>
+          <path d="M32 24C32 24 28 30 28 36C28 40.5 29.8 43.5 32 45C34.2 43.5 36 40.5 36 36C36 30 32 24 32 24Z" fill={T.forestMid} opacity="0.6"/>
+          <path d="M14 38C14 38 22 32 32 36C42 32 50 38 50 38C50 38 44 46 32 46C20 46 14 38 14 38Z" fill={T.forestMid} opacity="0.22"/>
+        </svg>
+
+        {/* Greeting */}
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.22em",textTransform:"uppercase",color:T.textMute,marginBottom:8}}>Good Morning</div>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",fontWeight:600,color:T.text,marginBottom:6}}>Welcome back, Anthan</div>
+        <div style={{fontSize:"0.82rem",color:T.textMute,marginBottom:40}}>{dateStr}  ·  Los Angeles</div>
+
+        {/* YSS Quote */}
+        {yssQuote.quote && (
+          <div style={{maxWidth:620,width:"100%",textAlign:"left",marginBottom:48,padding:"0 8px"}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:16,marginBottom:16}}>
+              {/* Small lotus icon */}
+              <svg width="36" height="36" viewBox="0 0 64 64" fill="none" style={{flexShrink:0,marginTop:2}}>
+                <path d="M32 18C32 18 24 28 24 37C24 43 27.6 47.5 32 49C36.4 47.5 40 43 40 37C40 28 32 18 32 18Z" fill={T.gold} opacity="0.5"/>
+                <path d="M14 38C14 38 22 32 32 36C42 32 50 38 50 38C50 38 44 46 32 46C20 46 14 38 14 38Z" fill={T.gold} opacity="0.35"/>
+              </svg>
+              <div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:600,letterSpacing:"0.18em",textTransform:"uppercase",color:T.gold,marginBottom:6}}>Spiritual Thought of the Day</div>
+                {yssQuote.topic && (
+                  <span style={{fontSize:"0.65rem",fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",border:`1.5px solid ${T.text}`,borderRadius:4,padding:"2px 8px",color:T.text}}>{yssQuote.topic}</span>
+                )}
+              </div>
+            </div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.2rem",fontStyle:"italic",lineHeight:1.7,color:T.text,marginBottom:14}}>
+              "{yssQuote.quote}"
+            </div>
+            <div style={{fontSize:"0.78rem",color:T.textMute,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontWeight:600,color:T.textSoft}}>{yssQuote.attribution}</span>
+              <span>·</span>
+              <a href="https://yssofindia.org/quote" target="_blank" rel="noopener noreferrer" style={{color:T.textMute,textDecoration:"none",fontSize:"0.72rem"}}>
+                yssofindia.org ↗
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* CTA Button */}
+        <button
+          onClick={() => setShowMorning(false)}
+          style={{
+            fontFamily:"'Syne',sans-serif",fontSize:"0.72rem",fontWeight:600,
+            letterSpacing:"0.12em",textTransform:"uppercase",
+            background:T.forest,color:"#fff",
+            border:"none",borderRadius:24,padding:"12px 36px",
+            cursor:"pointer",transition:"background 0.2s",
+          }}
+          onMouseEnter={e=>e.currentTarget.style.background=T.forestMid}
+          onMouseLeave={e=>e.currentTarget.style.background=T.forest}
+        >
+          Let's start our day
+        </button>
+      </div>
+    );
+  }
 
   // ── RENDER ───────────────────────────────────────────────────
   const base = {color:T.text,fontFamily:"'Jost', sans-serif",fontSize:14,background:T.bg};
