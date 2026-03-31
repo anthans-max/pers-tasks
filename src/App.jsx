@@ -951,8 +951,10 @@ export default function App() {
       <div style={{
         background:T.bg, color:T.text, fontFamily:"'Jost', sans-serif",
         minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center",
-        justifyContent:"center", padding:"40px 24px", textAlign:"center",
+        padding:"40px 24px", textAlign:"center", overflowY:"auto",
       }}>
+        <div style={{flex:1}}/>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
         {/* Wordmark */}
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,marginBottom:32,display:"flex",alignItems:"baseline",gap:1}}>
           Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
@@ -1015,6 +1017,8 @@ export default function App() {
         >
           Let's start our day
         </button>
+        </div>
+        <div style={{flex:1}}/>
       </div>
     );
   }
