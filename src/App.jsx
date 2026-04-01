@@ -691,7 +691,8 @@ export default function App() {
           {cells.map((day,i)=>{
             const isT=day&&year===tY&&month===tM&&day===tD;
             const isPast=day&&new Date(year,month,day)<now;
-            const dt=day?(byDate[day]||[]):[];
+            const dtRaw=day?(byDate[day]||[]):[];
+            const dt=dtRaw.filter((ev,idx,self)=>idx===self.findIndex(e=>e.title===ev.title&&e.dueDate===ev.dueDate));
             const maxShow=padH>0?3:2;
             return (
               <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden"}}>
