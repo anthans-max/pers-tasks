@@ -1131,22 +1131,14 @@ export default function App() {
         background:T.bg, color:T.text, fontFamily:"'Jost', sans-serif",
         minHeight:"100dvh", display:"flex", flexDirection:"column", alignItems:"center",
         justifyContent:"flex-start",
-        padding:"40px 24px", textAlign:"center", overflowY:"auto",
+        padding:"16px 24px 40px", textAlign:"center", overflowY:"auto",
       }}>
-        <div style={{flex:"0 0 auto",minHeight:40}}/>
+        <div style={{flex:"0 0 auto",minHeight:8}}/>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%",flex:"0 0 auto"}}>
         {/* Wordmark */}
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,marginBottom:12,display:"flex",alignItems:"baseline",gap:1}}>
           Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
         </div>
-
-        {/* Lotus SVG */}
-        <svg width="56" height="56" viewBox="0 0 64 64" fill="none" style={{marginBottom:14}}>
-          <path d="M32 12C32 12 20 24 20 36C20 44 25.4 50 32 52C38.6 50 44 44 44 36C44 24 32 12 32 12Z" fill={T.forestMid} opacity="0.18"/>
-          <path d="M32 18C32 18 24 28 24 37C24 43 27.6 47.5 32 49C36.4 47.5 40 43 40 37C40 28 32 18 32 18Z" fill={T.forestMid} opacity="0.35"/>
-          <path d="M32 24C32 24 28 30 28 36C28 40.5 29.8 43.5 32 45C34.2 43.5 36 40.5 36 36C36 30 32 24 32 24Z" fill={T.forestMid} opacity="0.6"/>
-          <path d="M14 38C14 38 22 32 32 36C42 32 50 38 50 38C50 38 44 46 32 46C20 46 14 38 14 38Z" fill={T.forestMid} opacity="0.22"/>
-        </svg>
 
         {/* Greeting */}
         <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.22em",textTransform:"uppercase",color:T.textMute,marginBottom:8}}>Good Morning</div>
