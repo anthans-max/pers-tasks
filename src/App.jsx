@@ -194,7 +194,7 @@ export default function App() {
       else setNewsSummaries(n.data.map(r => ({
         id: r.id, source: r.source, headline: r.headline,
         category: r.category, summary: r.summary,
-        storyDate: r.story_date,
+        url: r.url ?? null, storyDate: r.story_date,
       })));
     });
   }, []);
@@ -779,7 +779,14 @@ export default function App() {
                       <span style={{fontSize:11,background:sc.bg,color:sc.color,padding:"2px 8px",borderRadius:8,fontWeight:600}}>{story.source}</span>
                       <span style={{fontSize:11,background:T.forestPale,color:T.forest,padding:"2px 8px",borderRadius:8,fontWeight:600}}>{story.category}</span>
                     </div>
-                    <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6,lineHeight:1.4}}>{story.headline}</div>
+                    {story.url ? (
+                      <a href={story.url} target="_blank" rel="noopener noreferrer" style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6,lineHeight:1.4,display:"block",textDecoration:"none",borderBottom:`1px solid ${T.border}`}}
+                        onMouseEnter={e=>{e.currentTarget.style.color=T.forest;e.currentTarget.style.borderBottomColor=T.forest;}}
+                        onMouseLeave={e=>{e.currentTarget.style.color=T.text;e.currentTarget.style.borderBottomColor=T.border;}}
+                      >{story.headline}</a>
+                    ) : (
+                      <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6,lineHeight:1.4}}>{story.headline}</div>
+                    )}
                     <div style={{fontSize:13,color:T.textSoft,lineHeight:1.5}}>{story.summary}</div>
                   </div>
                 );
