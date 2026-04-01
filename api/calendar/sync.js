@@ -43,10 +43,14 @@ export default async function handler(req, res) {
 
     let allEvents = [];
     for (const month of months) {
-      const resp = await fetch(`${baseUrl}/api/gcal/events?month=${month}&bust=1`);
+      const url = `${baseUrl}/api/gcal/events?month=${month}&bust=1`;
+      console.log(`[calendar/sync] fetching ${url}`);
+      const resp = await fetch(url);
       const data = await resp.json();
+      console.log(`[calendar/sync] month=${month}: ${data.events?.length ?? 0} events, warning=${data.warning || "none"}`);
       if (data.events) allEvents.push(...data.events);
     }
+    console.log(`[calendar/sync] total=${allEvents.length}, unique after dedup:`);
 
     // Dedupe by event id + calendarSource
     const seen = new Set();
