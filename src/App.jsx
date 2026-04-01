@@ -413,6 +413,14 @@ export default function App() {
         if (!error) setEmailTasks(rows.map(r => ({ id: r.id, title: r.title, emailFrom: r.email_from ?? "", emailDate: r.email_date ?? "", priority: r.priority, dueDate: r.due_date ?? "", captured: r.captured_at ?? "" })));
       } else if (type === "calendar") {
         setGcalFetchKey(k => k + 1);
+        // Also refresh DB calendar events
+        const {year, month} = calMonth;
+        const startDate = `${year}-${String(month+1).padStart(2,"0")}-01`;
+        const endDate = `${year}-${String(month+1).padStart(2,"0")}-${new Date(year,month+1,0).getDate()}`;
+        const { data: dbRows, error: dbErr } = await supabase.from("tm_calendar_events")
+          .select("id,gcal_event_id,title,event_type,start_date,calendar_source,location")
+          .gte("start_date", startDate).lte("start_date", endDate);
+        if (!dbErr) setCalendarDbEvents(dbRows || []);
       }
     } catch (err) {
       console.error(`${type} sync error:`, err);

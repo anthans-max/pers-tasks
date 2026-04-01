@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/calendar/sync.js": { "maxDuration": 60 },
+    "api/email/capture.js": { "maxDuration": 60 },
+    "api/news/capture.js": { "maxDuration": 60 }
+  }
+}
