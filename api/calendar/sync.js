@@ -54,70 +54,35 @@ export default async function handler(req, res) {
     oauth2.setCredentials({ refresh_token: GOOGLE_REFRESH_TOKEN });
     const calendar = google.calendar({ version: "v3", auth: oauth2 });
 
+    // Fetch 1 month back, 3 months forward — same read-only scope as api/gcal/events.js
     const now = new Date();
     const past = new Date(now); past.setMonth(past.getMonth() - 1);
     const future = new Date(now); future.setMonth(future.getMonth() + 3);
+    const timeMin = past.toISOString();
+    const timeMax = future.toISOString();
 
     const results = [];
 
     for (const { id: calendarId, source } of CALENDARS) {
-      // Check for sync token
-      const { data: tokenRow } = await supabase
-        .from("tm_sync_tokens")
-        .select("sync_token")
-        .eq("calendar_id", calendarId)
-        .maybeSingle();
-
-      const syncToken = tokenRow?.sync_token || null;
-      let isIncremental = !!syncToken;
       let allItems = [];
-      let nextSyncToken = null;
+      let pageToken = null;
 
-      try {
-        let pageToken = null;
-        do {
-          const params = { calendarId, singleEvents: true, maxResults: 250 };
-          if (isIncremental && !pageToken) {
-            params.syncToken = syncToken;
-          } else if (!isIncremental && !pageToken) {
-            params.timeMin = past.toISOString();
-            params.timeMax = future.toISOString();
-            params.orderBy = "startTime";
-          }
-          if (pageToken) params.pageToken = pageToken;
+      do {
+        const params = {
+          calendarId, singleEvents: true, maxResults: 250,
+          timeMin, timeMax, orderBy: "startTime",
+        };
+        if (pageToken) params.pageToken = pageToken;
 
-          const resp = await calendar.events.list(params);
-          allItems.push(...(resp.data.items || []));
-          pageToken = resp.data.nextPageToken || null;
-          nextSyncToken = resp.data.nextSyncToken || null;
-        } while (pageToken);
-      } catch (err) {
-        if (err.code === 410 && isIncremental) {
-          // syncToken expired — full sync
-          isIncremental = false;
-          let pageToken = null;
-          do {
-            const params = {
-              calendarId, singleEvents: true, maxResults: 250,
-              timeMin: past.toISOString(), timeMax: future.toISOString(),
-              orderBy: "startTime",
-            };
-            if (pageToken) params.pageToken = pageToken;
-            const resp = await calendar.events.list(params);
-            allItems.push(...(resp.data.items || []));
-            pageToken = resp.data.nextPageToken || null;
-            nextSyncToken = resp.data.nextSyncToken || null;
-          } while (pageToken);
-        } else {
-          throw err;
-        }
-      }
+        const resp = await calendar.events.list(params);
+        allItems.push(...(resp.data.items || []));
+        pageToken = resp.data.nextPageToken || null;
+      } while (pageToken);
 
-      const cancelled = allItems.filter(e => e.status === "cancelled");
       const active = allItems.filter(e => e.status !== "cancelled");
       const rows = active.map(e => transformEvent(e, source)).filter(r => r.start_date);
 
-      let upserted = 0, deleted = 0;
+      let upserted = 0;
 
       if (rows.length > 0) {
         const { error } = await supabase
@@ -127,27 +92,7 @@ export default async function handler(req, res) {
         upserted = rows.length;
       }
 
-      if (cancelled.length > 0) {
-        const { count } = await supabase
-          .from("tm_calendar_events")
-          .delete({ count: "exact" })
-          .eq("calendar_source", source)
-          .in("gcal_event_id", cancelled.map(e => e.id));
-        deleted = count || 0;
-      }
-
-      if (nextSyncToken) {
-        await supabase.from("tm_sync_tokens").upsert({
-          calendar_id: calendarId,
-          sync_token: nextSyncToken,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "calendar_id" });
-      }
-
-      results.push({
-        source, mode: isIncremental ? "incremental" : "full",
-        fetched: allItems.length, upserted, deleted,
-      });
+      results.push({ source, fetched: allItems.length, upserted });
     }
 
     res.json({ ok: true, results });
