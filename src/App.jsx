@@ -165,6 +165,7 @@ export default function App() {
   const [modalName, setModalName] = useState("");
   const [showMorning, setShowMorning] = useState(true);
   const [syncing, setSyncing] = useState(null); // "news" | "email" | "calendar" | null
+  const [syncToast, setSyncToast] = useState(null); // { message, isError }
   const [yssQuote, setYssQuote] = useState({ quote: "", attribution: "", topic: "" });
   const isMobile = useIsMobile();
 
@@ -396,6 +397,11 @@ export default function App() {
       .then(({error})=>{ if(error) console.error("addProject:", error.message); });
   };
 
+  const showToast = (message, isError = false) => {
+    setSyncToast({ message, isError });
+    setTimeout(() => setSyncToast(null), 4000);
+  };
+
   const runSync = async (type) => {
     if (syncing) return;
     setSyncing(type);
@@ -408,12 +414,14 @@ export default function App() {
       if (type === "news") {
         const { data: rows, error } = await supabase.from("tm_news_summaries").select("*").order("story_date", { ascending: false }).limit(30);
         if (!error) setNewsSummaries(rows.map(r => ({ id: r.id, source: r.source, headline: r.headline, category: r.category, summary: r.summary, url: r.url ?? null, storyDate: r.story_date })));
+        const count = data.results?.reduce((s, r) => s + (r.stories || 0), 0) || 0;
+        showToast(`News synced — ${count} stories captured`);
       } else if (type === "email") {
         const { data: rows, error } = await supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID);
         if (!error) setEmailTasks(rows.map(r => ({ id: r.id, title: r.title, emailFrom: r.email_from ?? "", emailDate: r.email_date ?? "", priority: r.priority, dueDate: r.due_date ?? "", captured: r.captured_at ?? "" })));
+        showToast(`Email synced — ${data.inserted || 0} new tasks`);
       } else if (type === "calendar") {
         setGcalFetchKey(k => k + 1);
-        // Also refresh DB calendar events
         const {year, month} = calMonth;
         const startDate = `${year}-${String(month+1).padStart(2,"0")}-01`;
         const endDate = `${year}-${String(month+1).padStart(2,"0")}-${new Date(year,month+1,0).getDate()}`;
@@ -421,9 +429,12 @@ export default function App() {
           .select("id,gcal_event_id,title,event_type,start_date,calendar_source,location")
           .gte("start_date", startDate).lte("start_date", endDate);
         if (!dbErr) setCalendarDbEvents(dbRows || []);
+        const total = data.results?.reduce((s, r) => s + (r.upserted || 0), 0) || 0;
+        showToast(`Calendar synced — ${total} events updated`);
       }
     } catch (err) {
       console.error(`${type} sync error:`, err);
+      showToast(`Sync failed: ${err.message}`, true);
     } finally {
       setSyncing(null);
     }
@@ -1214,6 +1225,7 @@ export default function App() {
       </div>
       <PoweredFooter/>
       {renderModals()}
+      {syncToast&&<div style={{position:"fixed",bottom:48,left:"50%",transform:"translateX(-50%)",background:syncToast.isError?"#B94040":T.forest,color:"#fff",padding:"10px 20px",borderRadius:10,fontSize:13,fontFamily:"'Jost',sans-serif",fontWeight:500,zIndex:1100,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",animation:"fadeIn 0.2s ease"}}>{syncToast.message}</div>}
     </div>
   );
 
@@ -1232,6 +1244,7 @@ export default function App() {
       </div>
       {renderBottomNav()}
       {renderModals()}
+      {syncToast&&<div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:syncToast.isError?"#B94040":T.forest,color:"#fff",padding:"10px 20px",borderRadius:10,fontSize:13,fontFamily:"'Jost',sans-serif",fontWeight:500,zIndex:1100,boxShadow:"0 4px 16px rgba(0,0,0,0.2)"}}>{syncToast.message}</div>}
     </div>
   );
 }
