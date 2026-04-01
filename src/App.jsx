@@ -1042,7 +1042,7 @@ export default function App() {
             <div style={{fontSize:12,color:T.textSoft}}>From: {task.emailFrom}</div>
           </div>}
         </div>
-        <div style={{padding:"14px 20px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
+        <div style={{padding:"14px 20px 50px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
           <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
         </div>
       </div>
@@ -1128,11 +1128,12 @@ export default function App() {
     return (
       <div style={{
         background:T.bg, color:T.text, fontFamily:"'Jost', sans-serif",
-        minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center",
+        minHeight:"100dvh", display:"flex", flexDirection:"column", alignItems:"center",
+        justifyContent:"flex-start",
         padding:"40px 24px", textAlign:"center", overflowY:"auto",
       }}>
-        <div style={{flex:1}}/>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%"}}>
+        <div style={{flex:"0 0 auto",minHeight:40}}/>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%",flex:"0 0 auto"}}>
         {/* Wordmark */}
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,marginBottom:12,display:"flex",alignItems:"baseline",gap:1}}>
           Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
@@ -1196,7 +1197,7 @@ export default function App() {
           Let's start our day
         </button>
         </div>
-        <div style={{flex:1}}/>
+        <div style={{flex:"0 0 auto",minHeight:40}}/>
       </div>
     );
   }
@@ -1205,7 +1206,7 @@ export default function App() {
   const base = {color:T.text,fontFamily:"'Jost', sans-serif",fontSize:14,background:T.bg};
 
   if (!isMobile) return (
-    <div style={{...base,display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden"}}>
+    <div style={{...base,display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden"}}>
       <GoldBar/>
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {renderSidebar()}
@@ -1230,7 +1231,7 @@ export default function App() {
   );
 
   return (
-    <div style={{...base,maxWidth:430,margin:"0 auto",height:"100vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+    <div style={{...base,maxWidth:430,margin:"0 auto",height:"100dvh",overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start"}}>
       {renderTopBar()}
       {(view==="tasks"||view==="today")&&renderWeekStrip(false)}
       <div style={{flex:1,overflowY:"auto",paddingBottom:80}}>
