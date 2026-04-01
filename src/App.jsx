@@ -141,6 +141,7 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [emailTasks, setEmailTasks] = useState([]);
+  const [newsSummaries, setNewsSummaries] = useState([]);
   const [view, setView] = useState("tasks");
   const [dayFilter, setDayFilter] = useState(null);
   const [projectFilter, setProjectFilter] = useState("all");
@@ -171,7 +172,8 @@ export default function App() {
       supabase.from("tm_projects").select("*").eq("user_id", USER_ID),
       supabase.from("tm_tasks").select("*").eq("user_id", USER_ID).eq("completed", false),
       supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID),
-    ]).then(([p, t, e]) => {
+      supabase.from("tm_news_summaries").select("*").order("story_date", { ascending: false }).limit(30),
+    ]).then(([p, t, e, n]) => {
       if (p.error) console.error("fetch tm_projects:", p.error.message);
       else setProjects(p.data.map(r => ({ id: r.id, name: r.name, color: r.color })));
       if (t.error) console.error("fetch tm_tasks:", t.error.message);
@@ -187,6 +189,12 @@ export default function App() {
         id: r.id, title: r.title, emailFrom: r.email_from ?? "",
         emailDate: r.email_date ?? "", priority: r.priority,
         dueDate: r.due_date ?? "", captured: r.captured_at ?? "",
+      })));
+      if (n.error) console.error("fetch tm_news_summaries:", n.error.message);
+      else setNewsSummaries(n.data.map(r => ({
+        id: r.id, source: r.source, headline: r.headline,
+        category: r.category, summary: r.summary,
+        storyDate: r.story_date,
       })));
     });
   }, []);
@@ -389,26 +397,79 @@ export default function App() {
 
   // ── Shared Components ────────────────────────────────────────
 
-  // Desktop app header — "LotusList" branding with nav dots
-  const GoldBar = () => {
-    const labels = {tasks:"All Tasks",today:"Today",calendar:"Calendar",email:"Email Capture"};
-    const views = ["tasks","today","calendar","email"];
-    return (
-      <div style={{background:T.bg,borderBottom:`1px solid ${T.border}`,padding:"0 28px",height:54,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,zIndex:100}}>
-        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,display:"flex",alignItems:"baseline",gap:1}}>
-          Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
+  // Tab button for header navigation
+  const TabBtn = ({ active, onClick, children }) => (
+    <button onClick={onClick} style={{
+      background: active ? "#2d4a35" : "transparent",
+      border: "none",
+      borderRadius: 100,
+      color: active ? "#faf7f2" : "#a89070",
+      padding: "7px 18px",
+      fontSize: "0.62rem",
+      fontWeight: 500,
+      fontFamily: "'Syne', sans-serif",
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      cursor: "pointer",
+      transition: "all 0.15s",
+    }}>{children}</button>
+  );
+
+  // Desktop app header — "LotusList" branding with tab navigation
+  const GoldBar = () => (
+    <div style={{
+      background: "#faf7f2",
+      borderBottom: "1px solid #e0d8ca",
+      padding: "14px 28px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 12,
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+    }}>
+      {/* Brand */}
+      <div>
+        <div style={{
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: "1.25rem",
+          fontWeight: 600,
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          color: "#3d2e1e",
+        }}>
+          Lotus<em style={{ fontStyle: "italic", fontWeight: 400 }}>List</em>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <span style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",letterSpacing:"0.15em",textTransform:"uppercase",color:T.textMute,fontWeight:500}}>{labels[view]||"All Tasks"}</span>
-          <div style={{display:"flex",gap:5,alignItems:"center"}}>
-            {views.map(k=>(
-              <div key={k} onClick={()=>setView(k)} style={{width:7,height:7,borderRadius:"50%",background:view===k?T.text:T.border,cursor:"pointer",transition:"background 0.15s"}}/>
-            ))}
-          </div>
-        </div>
+        <div style={{
+          fontFamily: "'Syne', sans-serif",
+          fontSize: "0.6rem",
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          color: "#a89070",
+          marginTop: 2,
+        }}>Task Manager · 2026</div>
       </div>
-    );
-  };
+
+      {/* Tab navigation */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {[{label:"Tasks",key:"tasks"},{label:"Calendar",key:"calendar"},{label:"Emails",key:"email"},{label:"News",key:"news"}].map(({label,key}) => (
+          <TabBtn
+            key={key}
+            active={view === key}
+            onClick={() => setView(key)}
+          >
+            {label}
+          </TabBtn>
+        ))}
+        {/* Finance — external link */}
+        <a href="https://ledger.getlotusai.com" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+          <TabBtn active={false}>Finance</TabBtn>
+        </a>
+      </div>
+    </div>
+  );
 
   // Footer bar — "Powered by Lotus AI" with logo
   const PoweredFooter = () => (
@@ -678,6 +739,58 @@ export default function App() {
     );
   };
 
+  // ── News View ───────────────────────────────────────────────
+  const renderNewsView = (padH=16) => {
+    const sourceColors = {
+      "The Rundown AI": { bg: "rgba(181,112,58,0.10)", color: T.gold },
+      "Superhuman AI": { bg: "rgba(74,124,111,0.10)", color: T.email },
+      "TLDR Founders": { bg: "rgba(61,46,30,0.08)", color: T.textSoft },
+    };
+    // Group stories by date
+    const byDate = {};
+    newsSummaries.forEach(s => {
+      if (!byDate[s.storyDate]) byDate[s.storyDate] = [];
+      byDate[s.storyDate].push(s);
+    });
+    const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+    return (
+      <div style={{padding:`16px ${padH}px`}}>
+        {newsSummaries.length === 0 ? (
+          <div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
+            <div style={{fontSize:40,marginBottom:12}}>📰</div>
+            <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>No news yet</div>
+            <div style={{fontSize:13,marginTop:6}}>Stories from your newsletters will appear here</div>
+          </div>
+        ) : dates.map(date => (
+          <div key={date} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute,marginBottom:10}}>
+              {new Date(date + "T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {byDate[date].map(story => {
+                const sc = sourceColors[story.source] || { bg: T.surface, color: T.textSoft };
+                return (
+                  <div key={story.id} style={{background:T.bg2,border:`1px solid ${T.borderS}`,borderRadius:12,padding:"14px 16px",transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=T.navyDark;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(61,46,30,0.10)";}}
+                  >
+                    <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:11,background:sc.bg,color:sc.color,padding:"2px 8px",borderRadius:8,fontWeight:600}}>{story.source}</span>
+                      <span style={{fontSize:11,background:T.forestPale,color:T.forest,padding:"2px 8px",borderRadius:8,fontWeight:600}}>{story.category}</span>
+                    </div>
+                    <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6,lineHeight:1.4}}>{story.headline}</div>
+                    <div style={{fontSize:13,color:T.textSoft,lineHeight:1.5}}>{story.summary}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // ── Modals ───────────────────────────────────────────────────
   const NameModal = ({title,onSave,onClose}) => (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={onClose}>
@@ -800,6 +913,7 @@ export default function App() {
           {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.forest,badgeC:T.bg},
           {key:"calendar",icon:I.cal,label:"Calendar",badge:null},
           {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:T.bg},
+          {key:"news",icon:I.tasks,label:"News",badge:null},
         ].map(n=>(
           <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}}
             style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,color:view===n.key?T.forest:T.textSoft,background:view===n.key?T.forestPale:"transparent",borderLeft:`3px solid ${view===n.key?T.forest:"transparent"}`,transition:"all 0.15s"}}
@@ -885,7 +999,7 @@ export default function App() {
 
   // ── Desktop Main Header ──────────────────────────────────────
   const renderMainHeader = () => {
-    const titles={tasks:"All Tasks",today:"Today",calendar:"Calendar",email:"Email Capture"};
+    const titles={tasks:"All Tasks",today:"Today",calendar:"Calendar",email:"Email Capture",news:"News"};
     return (
       <div style={{padding:"18px 28px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.borderS}`,flexShrink:0}}>
         <div>
@@ -932,8 +1046,8 @@ export default function App() {
   );
 
   const renderBottomNav = () => (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:T.navBg,borderTop:`1px solid ${T.border}`,display:"grid",gridTemplateColumns:"repeat(4,1fr)",padding:"10px 0 22px",backdropFilter:"blur(20px)",zIndex:100}}>
-      {[{key:"tasks",ico:I.tasks,label:"Tasks"},{key:"today",ico:I.today,label:"Today"},{key:"calendar",ico:I.cal,label:"Calendar"},{key:"email",ico:I.mail,label:"Email"}].map(n=>(
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:T.navBg,borderTop:`1px solid ${T.border}`,display:"grid",gridTemplateColumns:"repeat(5,1fr)",padding:"10px 0 22px",backdropFilter:"blur(20px)",zIndex:100}}>
+      {[{key:"tasks",ico:I.tasks,label:"Tasks"},{key:"today",ico:I.today,label:"Today"},{key:"calendar",ico:I.cal,label:"Calendar"},{key:"email",ico:I.mail,label:"Email"},{key:"news",ico:I.tasks,label:"News"}].map(n=>(
         <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
           <Ico d={n.ico} size={20} color={view===n.key?T.forest:T.textMute}/>
           <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",color:view===n.key?T.forest:T.textMute}}>{n.label}</span>
@@ -1040,6 +1154,7 @@ export default function App() {
             {view==="today"&&renderFeed(true)}
             {view==="calendar"&&renderCalendar(0)}
             {view==="email"&&renderEmailView(0)}
+            {view==="news"&&renderNewsView(0)}
           </div>
         </div>
         {selectedTask&&renderDetailPanel()}
@@ -1060,6 +1175,7 @@ export default function App() {
         {view==="today"&&<div style={{padding:"0 16px"}}>{renderFeed(true)}</div>}
         {view==="calendar"&&renderCalendar(16)}
         {view==="email"&&renderEmailView(16)}
+        {view==="news"&&renderNewsView(16)}
       </div>
       {renderBottomNav()}
       {renderModals()}
