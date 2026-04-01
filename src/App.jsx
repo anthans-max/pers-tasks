@@ -164,6 +164,7 @@ export default function App() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const [showMorning, setShowMorning] = useState(true);
+  const [syncing, setSyncing] = useState(null); // "news" | "email" | "calendar" | null
   const [yssQuote, setYssQuote] = useState({ quote: "", attribution: "", topic: "" });
   const isMobile = useIsMobile();
 
@@ -393,6 +394,31 @@ export default function App() {
     setModalName(""); setShowProjectModal(false);
     supabase.from("tm_projects").insert({id, user_id:USER_ID, name:modalName.trim(), color:T.gold})
       .then(({error})=>{ if(error) console.error("addProject:", error.message); });
+  };
+
+  const runSync = async (type) => {
+    if (syncing) return;
+    setSyncing(type);
+    try {
+      const endpoints = { news: "/api/news/capture", email: "/api/email/capture", calendar: "/api/calendar/sync" };
+      const resp = await fetch(endpoints[type], { method: "POST" });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Sync failed");
+      // Refresh data after sync
+      if (type === "news") {
+        const { data: rows, error } = await supabase.from("tm_news_summaries").select("*").order("story_date", { ascending: false }).limit(30);
+        if (!error) setNewsSummaries(rows.map(r => ({ id: r.id, source: r.source, headline: r.headline, category: r.category, summary: r.summary, url: r.url ?? null, storyDate: r.story_date })));
+      } else if (type === "email") {
+        const { data: rows, error } = await supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID);
+        if (!error) setEmailTasks(rows.map(r => ({ id: r.id, title: r.title, emailFrom: r.email_from ?? "", emailDate: r.email_date ?? "", priority: r.priority, dueDate: r.due_date ?? "", captured: r.captured_at ?? "" })));
+      } else if (type === "calendar") {
+        setGcalFetchKey(k => k + 1);
+      }
+    } catch (err) {
+      console.error(`${type} sync error:`, err);
+    } finally {
+      setSyncing(null);
+    }
   };
 
   // ── Shared Components ────────────────────────────────────────
@@ -1014,10 +1040,22 @@ export default function App() {
           <div style={{fontFamily:"'Syne',sans-serif",fontSize:11,color:T.textMute,marginTop:2,textTransform:"uppercase",letterSpacing:"0.3px"}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,border:`1px solid ${T.borderS}`,borderRadius:8,padding:"7px 12px",width:200}}>
-            <Ico d={I.search} size={14} color={T.textMute}/>
-            <span style={{fontSize:12,color:T.textMute}}>Search tasks…</span>
-          </div>
+          {(view==="calendar"||view==="email"||view==="news")&&(
+            <button onClick={()=>runSync(view==="email"?"email":view==="news"?"news":"calendar")} disabled={!!syncing}
+              style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",background:syncing===view||syncing===(view==="email"?"email":view==="news"?"news":"calendar")?T.surface:T.forest,border:"none",color:syncing?T.textMute:T.bg,borderRadius:100,cursor:syncing?"not-allowed":"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif",transition:"all 0.15s"}}>
+              {syncing===(view==="email"?"email":view==="news"?"news":"calendar") ? (
+                <><span style={{display:"inline-block",width:12,height:12,border:`2px solid ${T.textMute}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Syncing…</>
+              ) : (
+                <><Ico d={I.recur} size={13} color={T.bg}/>Sync Now</>
+              )}
+            </button>
+          )}
+          {(view==="tasks"||view==="today")&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,border:`1px solid ${T.borderS}`,borderRadius:8,padding:"7px 12px",width:200}}>
+              <Ico d={I.search} size={14} color={T.textMute}/>
+              <span style={{fontSize:12,color:T.textMute}}>Search tasks…</span>
+            </div>
+          )}
         </div>
       </div>
     );
