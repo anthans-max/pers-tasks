@@ -2,24 +2,21 @@
  * One-time script to obtain a Google OAuth2 refresh token.
  *
  * Usage:
- *   1. Create OAuth2 credentials in Google Cloud Console:
- *      - Go to https://console.cloud.google.com/apis/credentials
- *      - Create an OAuth 2.0 Client ID (Desktop application type)
- *      - Copy the Client ID and Client Secret
+ *   1. In Google Cloud Console (https://console.cloud.google.com/apis/credentials),
+ *      open your OAuth 2.0 Client and add this redirect URI:
+ *        http://localhost:3333/callback
  *
- *   2. Enable the Google Calendar API:
- *      - Go to https://console.cloud.google.com/apis/library
- *      - Search "Google Calendar API" and enable it
+ *   2. Enable the Google Calendar API and Gmail API:
+ *      https://console.cloud.google.com/apis/library
  *
  *   3. Run this script:
- *      node scripts/get-google-token.js
+ *      GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... node scripts/get-google-token.js
  *
- *   4. Visit the URL printed, grant access, paste the auth code when prompted.
- *      The script prints your refresh token — copy it to .env.local.
+ *   4. A browser window opens — grant access. The token prints in the terminal.
  */
 
 import { google } from "googleapis";
-import readline from "readline";
+import http from "http";
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -32,33 +29,74 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
   process.exit(1);
 }
 
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
-const REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"; // out-of-band — no local server needed
+const PORT = 3333;
+const REDIRECT_URI = `http://localhost:${PORT}/callback`;
+
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/gmail.readonly",
+];
 
 const oauth2 = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 const authUrl = oauth2.generateAuthUrl({
   access_type: "offline",
   scope: SCOPES,
-  prompt: "consent", // forces refresh_token to be returned even if previously granted
+  prompt: "consent",
 });
 
-console.log("\n─────────────────────────────────────────────────────────");
-console.log("Open this URL in your browser and grant access:");
-console.log("\n" + authUrl + "\n");
-console.log("─────────────────────────────────────────────────────────\n");
+const server = http.createServer(async (req, res) => {
+  if (!req.url.startsWith("/callback")) {
+    res.writeHead(404);
+    res.end("Not found");
+    return;
+  }
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  const code = url.searchParams.get("code");
+  const error = url.searchParams.get("error");
 
-rl.question("Paste the authorization code here: ", async (code) => {
-  rl.close();
-  try {
-    const { tokens } = await oauth2.getToken(code.trim());
-    console.log("\n✅ Success! Add this to your .env.local:\n");
-    console.log(`GOOGLE_REFRESH_TOKEN=${tokens.refresh_token}`);
-    console.log("\n(Also make sure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are in .env.local)\n");
-  } catch (err) {
-    console.error("Failed to exchange code for tokens:", err.message);
+  if (error) {
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(`<h2>Authorization denied: ${error}</h2><p>You can close this tab.</p>`);
+    console.error(`\n❌ Authorization denied: ${error}`);
+    server.close();
     process.exit(1);
   }
+
+  if (!code) {
+    res.writeHead(400, { "Content-Type": "text/html" });
+    res.end("<h2>No authorization code received</h2>");
+    return;
+  }
+
+  try {
+    const { tokens } = await oauth2.getToken(code);
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end("<h2>Success! You can close this tab.</h2><p>Check your terminal for the refresh token.</p>");
+
+    console.log("\n✅ Success! Update your environment with:\n");
+    console.log(`GOOGLE_REFRESH_TOKEN=${tokens.refresh_token}`);
+    console.log("\nUpdate this in Vercel env vars and .env.local\n");
+  } catch (err) {
+    res.writeHead(500, { "Content-Type": "text/html" });
+    res.end(`<h2>Token exchange failed: ${err.message}</h2>`);
+    console.error("Failed to exchange code for tokens:", err.message);
+  }
+
+  server.close();
+  process.exit(0);
+});
+
+server.listen(PORT, () => {
+  console.log("\n─────────────────────────────────────────────────────────");
+  console.log("Opening browser for Google authorization...");
+  console.log("\nIf it doesn't open automatically, visit:");
+  console.log(`\n${authUrl}\n`);
+  console.log("─────────────────────────────────────────────────────────\n");
+
+  // Open browser automatically on macOS
+  import("child_process").then(({ exec }) => {
+    exec(`open "${authUrl}"`);
+  });
 });

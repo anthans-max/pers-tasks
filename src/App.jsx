@@ -161,6 +161,7 @@ export default function App() {
   const [gcalLastSync, setGcalLastSync] = useState(null);
   const [gcalFetchKey, setGcalFetchKey] = useState(0);
   const [gcalLoading, setGcalLoading] = useState(false);
+  const [todayEvents, setTodayEvents] = useState([]);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const [showMorning, setShowMorning] = useState(true);
@@ -245,6 +246,33 @@ export default function App() {
         else setCalendarDbEvents(data || []);
       });
   }, [view, calMonth]);
+
+  // Fetch today's GCal events + DB calendar events for Today view
+  useEffect(() => {
+    if (view !== "today") return;
+    const td = todayStr();
+    const month = td.slice(0, 7); // YYYY-MM
+    Promise.all([
+      fetch(`/api/gcal/events?month=${month}`).then(r => r.json()).then(({ events = [] }) =>
+        events.filter(e => e.date === td).map(e => ({ ...e, _gcal: true }))
+      ).catch(() => []),
+      supabase.from("tm_calendar_events")
+        .select("id,gcal_event_id,title,event_type,start_date,start_time,end_time,calendar_source,location")
+        .eq("start_date", td)
+        .then(({ data }) => (data || []).map(e => ({ ...e, _calEvent: true })))
+    ]).then(([gcal, db]) => {
+      // Prefer live gcal over DB duplicates
+      const gcalIds = new Set(gcal.map(e => e.id));
+      const deduped = [...gcal, ...db.filter(e => !gcalIds.has(e.gcal_event_id))];
+      // Sort by time (all-day first, then by start_time)
+      deduped.sort((a, b) => {
+        const aTime = a.allDay ? "" : (a.start_time || a.date || "");
+        const bTime = b.allDay ? "" : (b.start_time || b.date || "");
+        return aTime.localeCompare(bTime);
+      });
+      setTodayEvents(deduped);
+    });
+  }, [view]);
 
   const TODAY = useMemo(() => todayStr(), []);
 
@@ -560,9 +588,36 @@ export default function App() {
 
   const renderFeed = (flat=false) => {
     const isEmpty = visTasks.length===0;
+    const showTodayEvents = view==="today" && todayEvents.length > 0;
     if (flat||view==="today"||dayFilter) return (
       <div style={{padding:"0 0 8px"}}>
-        {isEmpty?(<div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
+        {showTodayEvents && (
+          <div style={{marginBottom:visTasks.length?16:0}}>
+            <div style={{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:1,color:T.textMute,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>Calendar</div>
+            {todayEvents.map((ev,i) => {
+              const isAllDay = ev.allDay || ev.event_type==="all_day";
+              const timeStr = isAllDay ? "All day" : (ev.start_time || (ev.date && ev.date.length > 10 ? ev.date.slice(11,16) : ""));
+              const isShared = ev.calendarSource==="shared" || ev.calendar_source==="shared";
+              const lower = (ev.title||"").toLowerCase();
+              const isBday = lower.includes("birthday")||lower.includes("bday")||lower.includes("anniversary");
+              const accent = isBday ? "#8A6310" : isShared ? "#4A3F80" : "#2A5E54";
+              const bg = isBday ? "rgba(181,135,26,0.10)" : isShared ? "rgba(123,111,170,0.10)" : "rgba(74,124,111,0.10)";
+              return (
+                <div key={ev.id||ev.gcal_event_id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:6,borderRadius:10,background:bg,borderLeft:`3px solid ${accent}`}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:500,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
+                    {ev.location && <div style={{fontSize:11,color:T.textMute,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.location}</div>}
+                  </div>
+                  {timeStr && <div style={{fontSize:12,color:accent,fontWeight:500,whiteSpace:"nowrap",fontFamily:"'Syne',sans-serif"}}>{timeStr}</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {visTasks.length > 0 && showTodayEvents && (
+          <div style={{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:1,color:T.textMute,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>Tasks</div>
+        )}
+        {isEmpty && !showTodayEvents?(<div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
           <div style={{fontSize:32,marginBottom:12}}>✓</div>
           <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All clear</div>
           <div style={{fontSize:13,marginTop:4}}>No tasks {view==="today"?"due today":"for this day"}</div>
