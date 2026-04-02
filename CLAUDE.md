@@ -42,7 +42,7 @@ All sync endpoints use Google OAuth2 refresh token and have `maxDuration: 60` in
 
 All tables are scoped by `user_id` (UUID from `VITE_USER_ID` env var) except `tm_news_summaries` and `tm_calendar_events`. Row-level security is enforced by Supabase.
 
-**Views:** Tasks (grouped by project), Today, Calendar (month grid merging tasks + GCal events), Email Capture (batch assignment/dismissal), News (daily newsletter stories grouped by date).
+**Views:** Tasks (grouped by project), Today (tasks + GCal events for today), Calendar (month grid merging tasks + GCal events), Email Capture (batch assignment/dismissal), News (daily newsletter stories grouped by date).
 
 **Data flow:** Optimistic UI updates with Supabase mutations. Calendar view merges local tasks, email tasks, GCal events, and DB calendar events into a unified month grid. Each view with external data has a "Sync Now" button that triggers the corresponding API route and shows a toast notification.
 
@@ -74,4 +74,6 @@ See `.env.example` for the full template.
 ## SQL Migrations
 
 Located in `sql/` directory. Run manually in Supabase SQL Editor.
+- `001_sync_tokens.sql` — sync token tracking
 - `002_news_summaries.sql` — creates `tm_news_summaries` table with RLS policy
+- `003_calendar_events_id_default.sql` — adds `gen_random_uuid()` default to `tm_calendar_events.id`

@@ -247,10 +247,10 @@ export default function App() {
       });
   }, [view, calMonth]);
 
-  // Fetch today's GCal events + DB calendar events for Today view
+  // Fetch GCal events + DB calendar events for Today view (or day filter)
   useEffect(() => {
-    if (view !== "today") return;
-    const td = todayStr();
+    if (view !== "today") { setTodayEvents([]); return; }
+    const td = dayFilter || todayStr();
     const month = td.slice(0, 7); // YYYY-MM
     Promise.all([
       fetch(`/api/gcal/events?month=${month}`).then(r => r.json()).then(({ events = [] }) =>
@@ -272,7 +272,7 @@ export default function App() {
       });
       setTodayEvents(deduped);
     });
-  }, [view]);
+  }, [view, dayFilter]);
 
   const TODAY = useMemo(() => todayStr(), []);
 
@@ -292,8 +292,8 @@ export default function App() {
 
   const visTasks = useMemo(() => {
     let t = tasks.filter(x => !x.completed);
-    if (view==="today") t = t.filter(x => x.dueDate===TODAY);
-    if (dayFilter) t = t.filter(x => x.dueDate===dayFilter);
+    if (view==="today") t = t.filter(x => x.dueDate===(dayFilter||TODAY));
+    else if (dayFilter) t = t.filter(x => x.dueDate===dayFilter);
     if (projectFilter!=="all") t = t.filter(x => x.projectId===projectFilter);
     return t;
   }, [tasks, view, dayFilter, projectFilter, TODAY]);
@@ -658,7 +658,7 @@ export default function App() {
   const renderWeekStrip = (compact=false, padH=compact?28:16) => (
     <div style={{display:"flex",gap:compact?4:2,overflowX:"auto",padding:`12px ${padH}px`,borderBottom:`1px solid ${T.borderS}`,scrollbarWidth:"none",flexShrink:0,alignItems:"center"}}>
       {weekDays.map(d=>(
-        <div key={d.date} onClick={()=>{setDayFilter(dayFilter===d.date?null:d.date);if(view!=="tasks")setView("tasks");}}
+        <div key={d.date} onClick={()=>{setDayFilter(dayFilter===d.date?null:d.date);if(view!=="tasks"&&view!=="today")setView("tasks");}}
           style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:compact?56:46,padding:compact?"8px 12px":"8px 6px",borderRadius:10,cursor:"pointer",transition:"all 0.15s",
             background:dayFilter===d.date?T.forestPale:"transparent",
             border:`1px solid ${dayFilter===d.date?"rgba(45,74,53,0.3)":"transparent"}`,
@@ -750,7 +750,8 @@ export default function App() {
             const dt=dtRaw.filter((ev,idx,self)=>idx===self.findIndex(e=>e.title===ev.title&&e.dueDate===ev.dueDate));
             const maxShow=padH>0?3:2;
             return (
-              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden"}}>
+              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden",cursor:day?"pointer":"default"}}
+                onClick={()=>{if(!day)return;const dd=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;setDayFilter(dd);setView("today");}}>
                 {day&&<>
                   <div style={{fontSize:12,fontWeight:isT?800:600,color:isT?T.gold:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
                     {isT&&<span style={{width:5,height:5,borderRadius:"50%",background:T.gold,display:"inline-block"}}/>}{day}
