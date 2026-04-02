@@ -33,9 +33,10 @@ No test framework is configured.
 
 All sync endpoints use Google OAuth2 refresh token and have `maxDuration: 60` in `vercel.json`.
 
-**Database:** Supabase (PostgreSQL) with five tables:
+**Database:** Supabase (PostgreSQL) with six tables:
 - `tm_projects` — project definitions with color
-- `tm_tasks` — tasks with priority, due dates, subtasks, recurring flags, email source tracking
+- `tm_tasks` — tasks with priority, due dates, subtasks counters, recurring flags, email source tracking
+- `tm_sub_tasks` — individual sub-task items (title, is_complete) linked to parent task via `parent_task_id` FK with ON DELETE CASCADE
 - `tm_email_tasks` — captured email tasks pending assignment
 - `tm_calendar_events` — calendar events synced from GCal
 - `tm_news_summaries` — AI-extracted newsletter stories with headline, category, summary, url
@@ -77,3 +78,4 @@ Located in `sql/` directory. Run manually in Supabase SQL Editor.
 - `001_sync_tokens.sql` — sync token tracking
 - `002_news_summaries.sql` — creates `tm_news_summaries` table with RLS policy
 - `003_calendar_events_id_default.sql` — adds `gen_random_uuid()` default to `tm_calendar_events.id`
+- `004_sub_tasks.sql` — creates `tm_sub_tasks` table for individual sub-task items

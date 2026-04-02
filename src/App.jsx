@@ -72,6 +72,7 @@ const I = {
   arrow:"M5 12h14M12 5l7 7-7 7", search:"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
   chevL:"M15 18l-6-6 6-6", chevR:"M9 18l6-6-6-6",
   recur:"M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15",
+  chevD:"M6 9l6 6 6-6",
   folder:"M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z",
   settings:"M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z",
 };
@@ -162,6 +163,10 @@ export default function App() {
   const [gcalFetchKey, setGcalFetchKey] = useState(0);
   const [gcalLoading, setGcalLoading] = useState(false);
   const [todayEvents, setTodayEvents] = useState([]);
+  const [subTasks, setSubTasks] = useState({});
+  const [expandedTasks, setExpandedTasks] = useState(new Set());
+  const [addingSubTo, setAddingSubTo] = useState(null);
+  const [newSubTitle, setNewSubTitle] = useState("");
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const [showMorning, setShowMorning] = useState(true);
@@ -176,7 +181,8 @@ export default function App() {
       supabase.from("tm_tasks").select("*").eq("user_id", USER_ID).eq("completed", false),
       supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID),
       supabase.from("tm_news_summaries").select("*").order("story_date", { ascending: false }).limit(30),
-    ]).then(([p, t, e, n]) => {
+      supabase.from("tm_sub_tasks").select("*").eq("user_id", USER_ID),
+    ]).then(([p, t, e, n, s]) => {
       if (p.error) console.error("fetch tm_projects:", p.error.message);
       else setProjects(p.data.map(r => ({ id: r.id, name: r.name, color: r.color })));
       if (t.error) console.error("fetch tm_tasks:", t.error.message);
@@ -199,6 +205,17 @@ export default function App() {
         category: r.category, summary: r.summary,
         url: r.url ?? null, storyDate: r.story_date,
       })));
+      if (s.error) console.error("fetch tm_sub_tasks:", s.error.message);
+      else {
+        const grouped = {};
+        s.data.forEach(r => {
+          const pid = r.parent_task_id;
+          if (!grouped[pid]) grouped[pid] = [];
+          grouped[pid].push({ id: r.id, parentTaskId: pid, title: r.title, isComplete: r.is_complete, sortOrder: r.sort_order });
+        });
+        Object.values(grouped).forEach(arr => arr.sort((a, b) => a.sortOrder - b.sortOrder));
+        setSubTasks(grouped);
+      }
     });
   }, []);
 
@@ -348,6 +365,8 @@ export default function App() {
   const deleteTask = (id) => {
     setTasks(p=>p.filter(t=>t.id!==id));
     if(selectedTask?.id===id) setSelectedTask(null);
+    setSubTasks(prev => { const next = {...prev}; delete next[id]; return next; });
+    setExpandedTasks(prev => { const next = new Set(prev); next.delete(id); return next; });
     supabase.from("tm_tasks").delete().eq("id",id)
       .then(({error})=>{ if(error) console.error("deleteTask:", error.message); });
   };
@@ -366,6 +385,49 @@ export default function App() {
     if(Object.keys(patch).length)
       supabase.from("tm_tasks").update(patch).eq("id",id)
         .then(({error})=>{ if(error) console.error("updateTask:", error.message); });
+  };
+  const addSubTask = (parentTaskId, title) => {
+    if (!title.trim()) return;
+    const id = uid();
+    const currentSubs = subTasks[parentTaskId] || [];
+    const sub = { id, parentTaskId, title: title.trim(), isComplete: false, sortOrder: currentSubs.length };
+    setSubTasks(prev => ({ ...prev, [parentTaskId]: [...(prev[parentTaskId] || []), sub] }));
+    const task = tasks.find(t => t.id === parentTaskId);
+    if (task) updateTask(parentTaskId, { subtasks: (task.subtasks || 0) + 1 });
+    setAddingSubTo(null); setNewSubTitle("");
+    supabase.from("tm_sub_tasks").insert({
+      id, parent_task_id: parentTaskId, user_id: USER_ID,
+      title: sub.title, is_complete: false, sort_order: sub.sortOrder,
+    }).then(({ error }) => { if (error) console.error("addSubTask:", error.message); });
+  };
+  const toggleSubTask = (parentTaskId, subTaskId) => {
+    const subs = subTasks[parentTaskId] || [];
+    const sub = subs.find(s => s.id === subTaskId);
+    if (!sub) return;
+    const newVal = !sub.isComplete;
+    setSubTasks(prev => ({
+      ...prev, [parentTaskId]: prev[parentTaskId].map(s => s.id === subTaskId ? { ...s, isComplete: newVal } : s),
+    }));
+    const task = tasks.find(t => t.id === parentTaskId);
+    if (task) updateTask(parentTaskId, { subtasksDone: (task.subtasksDone || 0) + (newVal ? 1 : -1) });
+    supabase.from("tm_sub_tasks").update({ is_complete: newVal }).eq("id", subTaskId)
+      .then(({ error }) => { if (error) console.error("toggleSubTask:", error.message); });
+  };
+  const deleteSubTask = (parentTaskId, subTaskId) => {
+    const subs = subTasks[parentTaskId] || [];
+    const sub = subs.find(s => s.id === subTaskId);
+    if (!sub) return;
+    setSubTasks(prev => ({
+      ...prev, [parentTaskId]: prev[parentTaskId].filter(s => s.id !== subTaskId),
+    }));
+    const task = tasks.find(t => t.id === parentTaskId);
+    if (task) {
+      const patch = { subtasks: Math.max(0, (task.subtasks || 0) - 1) };
+      if (sub.isComplete) patch.subtasksDone = Math.max(0, (task.subtasksDone || 0) - 1);
+      updateTask(parentTaskId, patch);
+    }
+    supabase.from("tm_sub_tasks").delete().eq("id", subTaskId)
+      .then(({ error }) => { if (error) console.error("deleteSubTask:", error.message); });
   };
   const assignEmail = (eid,projId) => {
     const et = emailTasks.find(e=>e.id===eid); if(!et) return;
@@ -554,35 +616,81 @@ export default function App() {
 
   const inp = {background:"rgba(44,40,32,0.06)",border:`1px solid ${T.border}`,color:T.text,borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
 
+  const SubTaskList = ({taskId}) => {
+    const subs = subTasks[taskId] || [];
+    return (
+      <div style={{marginLeft:40,marginRight:16,marginBottom:4}}>
+        {subs.map(sub => (
+          <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderS}`}}>
+            <button onClick={()=>toggleSubTask(taskId,sub.id)}
+              style={{width:14,height:14,minWidth:14,borderRadius:3,border:`1.5px solid ${sub.isComplete?T.forest:T.forestMid}`,
+                background:sub.isComplete?T.forest:"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {sub.isComplete&&<svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke={T.bg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+            </button>
+            <span style={{flex:1,fontSize:12.5,color:sub.isComplete?T.textMute:T.text,textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
+            <button onClick={()=>deleteSubTask(taskId,sub.id)}
+              className="subtask-del"
+              style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0,transition:"opacity 0.15s"}}>
+              <Ico d={I.x} size={11} color={T.red}/>
+            </button>
+          </div>
+        ))}
+        {addingSubTo===taskId ? (
+          <div style={{display:"flex",gap:6,alignItems:"center",padding:"6px 0"}}>
+            <input autoFocus value={newSubTitle} onChange={e=>setNewSubTitle(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter")addSubTask(taskId,newSubTitle);if(e.key==="Escape"){setAddingSubTo(null);setNewSubTitle("");}}}
+              placeholder="Sub-task title…"
+              style={{flex:1,fontSize:12,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,outline:"none",fontFamily:"'Jost',sans-serif"}}/>
+            <button onClick={()=>addSubTask(taskId,newSubTitle)}
+              style={{fontSize:11,fontWeight:600,color:T.forest,background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>Add</button>
+          </div>
+        ) : (
+          <button onClick={(e)=>{e.stopPropagation();setAddingSubTo(taskId);setNewSubTitle("");}}
+            style={{fontSize:11,color:T.gold,background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+            + Add sub-task
+          </button>
+        )}
+      </div>
+    );
+  };
+
   const TaskCard = ({task}) => {
     const sel = selectedTask?.id===task.id;
     const od=isOverdue(task.dueDate), td=isToday(task.dueDate);
+    const isExpanded = expandedTasks.has(task.id);
     return (
-      <div onClick={()=>setSelectedTask(sel?null:task)}
-        style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 16px",borderRadius:11,
-          background:sel?"rgba(61,46,30,0.10)":T.bg2,
-          border:`1px solid ${sel?T.goldB:T.borderS}`,
-          position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:4,transition:"all 0.15s"}}
-        onMouseEnter={e=>{e.currentTarget.style.background="#EDE9DF";e.currentTarget.style.borderColor=T.navyDark;}}
-        onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(61,46,30,0.10)":T.bg2;e.currentTarget.style.borderColor=sel?T.goldB:T.borderS;}}
-      >
-        <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:PC[task.priority],borderRadius:"3px 0 0 3px"}} />
-        <button onClick={e=>{e.stopPropagation();toggleDone(task.id);}}
-          style={{width:19,height:19,minWidth:19,borderRadius:"50%",marginTop:2,border:`2px solid ${PC[task.priority]}`,background:"transparent",cursor:"pointer",padding:0,flexShrink:0,transition:"all 0.2s"}}
-          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"}
-          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-        />
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text}}>{task.title}</div>
-          <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
-            {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
-            {task.dueDate&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:td?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
-              📅 {fmtDate(task.dueDate)}{task.recurring&&<Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/>}
-            </span>}
-            {task.subtasks>0&&<span style={{fontSize:11,color:T.textMute}}>{task.subtasksDone}/{task.subtasks}</span>}
+      <>
+        <div onClick={()=>setSelectedTask(sel?null:task)}
+          style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 16px",borderRadius:11,
+            background:sel?"rgba(61,46,30,0.10)":T.bg2,
+            border:`1px solid ${sel?T.goldB:T.borderS}`,
+            position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:isExpanded?0:4,transition:"all 0.15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.background="#EDE9DF";e.currentTarget.style.borderColor=T.navyDark;}}
+          onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(61,46,30,0.10)":T.bg2;e.currentTarget.style.borderColor=sel?T.goldB:T.borderS;}}
+        >
+          <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:PC[task.priority],borderRadius:"3px 0 0 3px"}} />
+          <button onClick={e=>{e.stopPropagation();toggleDone(task.id);}}
+            style={{width:19,height:19,minWidth:19,borderRadius:"50%",marginTop:2,border:`2px solid ${PC[task.priority]}`,background:"transparent",cursor:"pointer",padding:0,flexShrink:0,transition:"all 0.2s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+          />
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text}}>{task.title}</div>
+            <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
+              {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
+              {task.dueDate&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:td?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
+                📅 {fmtDate(task.dueDate)}{task.recurring&&<Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/>}
+              </span>}
+              {task.subtasks>0&&<span onClick={e=>{e.stopPropagation();setExpandedTasks(p=>{const n=new Set(p);n.has(task.id)?n.delete(task.id):n.add(task.id);return n;});}}
+                style={{fontSize:11,color:T.textMute,display:"flex",alignItems:"center",gap:3,cursor:"pointer"}}>
+                {task.subtasksDone}/{task.subtasks}
+                <Ico d={I.chevD} size={10} color={T.textMute} style={{transform:isExpanded?"rotate(180deg)":"none",transition:"transform 0.15s"}}/>
+              </span>}
+            </div>
           </div>
         </div>
-      </div>
+        {isExpanded&&<SubTaskList taskId={task.id}/>}
+      </>
     );
   };
 
@@ -968,6 +1076,40 @@ export default function App() {
                 <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
               ))}
             </div>
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>
+                Sub-tasks{selectedTask.subtasks>0&&` (${selectedTask.subtasksDone}/${selectedTask.subtasks})`}
+              </div>
+              {(subTasks[selectedTask.id]||[]).map(sub=>(
+                <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${T.borderS}`}}>
+                  <button onClick={()=>toggleSubTask(selectedTask.id,sub.id)}
+                    style={{width:14,height:14,minWidth:14,borderRadius:3,border:`1.5px solid ${sub.isComplete?T.forest:T.forestMid}`,
+                      background:sub.isComplete?T.forest:"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {sub.isComplete&&<svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke={T.bg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+                  </button>
+                  <span style={{flex:1,fontSize:13,color:sub.isComplete?T.textMute:T.text,textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
+                  <button onClick={()=>deleteSubTask(selectedTask.id,sub.id)}
+                    style={{background:"none",border:"none",cursor:"pointer",padding:2}}>
+                    <Ico d={I.x} size={11} color={T.red}/>
+                  </button>
+                </div>
+              ))}
+              {addingSubTo===selectedTask.id ? (
+                <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 0"}}>
+                  <input autoFocus value={newSubTitle} onChange={e=>setNewSubTitle(e.target.value)}
+                    onKeyDown={e=>{if(e.key==="Enter")addSubTask(selectedTask.id,newSubTitle);if(e.key==="Escape"){setAddingSubTo(null);setNewSubTitle("");}}}
+                    placeholder="Sub-task title…"
+                    style={{flex:1,fontSize:12,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,outline:"none",fontFamily:"'Jost',sans-serif"}}/>
+                  <button onClick={()=>addSubTask(selectedTask.id,newSubTitle)}
+                    style={{fontSize:11,fontWeight:600,color:T.forest,background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>Add</button>
+                </div>
+              ) : (
+                <button onClick={()=>{setAddingSubTo(selectedTask.id);setNewSubTitle("");}}
+                  style={{fontSize:11,color:T.gold,background:"none",border:"none",cursor:"pointer",padding:"7px 0",fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+                  + Add sub-task
+                </button>
+              )}
+            </div>
             <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
           </div>
         </div>
@@ -1098,6 +1240,40 @@ export default function App() {
             <div style={{fontSize:10,fontWeight:700,color:T.email,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>Email Origin</div>
             <div style={{fontSize:12,color:T.textSoft}}>From: {task.emailFrom}</div>
           </div>}
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>
+              Sub-tasks{task.subtasks>0&&` (${task.subtasksDone}/${task.subtasks})`}
+            </div>
+            {(subTasks[task.id]||[]).map(sub=>(
+              <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${T.borderS}`}}>
+                <button onClick={()=>toggleSubTask(task.id,sub.id)}
+                  style={{width:14,height:14,minWidth:14,borderRadius:3,border:`1.5px solid ${sub.isComplete?T.forest:T.forestMid}`,
+                    background:sub.isComplete?T.forest:"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {sub.isComplete&&<svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke={T.bg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+                </button>
+                <span style={{flex:1,fontSize:13,color:sub.isComplete?T.textMute:T.text,textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
+                <button onClick={()=>deleteSubTask(task.id,sub.id)} className="subtask-del"
+                  style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0,transition:"opacity 0.15s"}}>
+                  <Ico d={I.x} size={11} color={T.red}/>
+                </button>
+              </div>
+            ))}
+            {addingSubTo===task.id ? (
+              <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 0"}}>
+                <input autoFocus value={newSubTitle} onChange={e=>setNewSubTitle(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter")addSubTask(task.id,newSubTitle);if(e.key==="Escape"){setAddingSubTo(null);setNewSubTitle("");}}}
+                  placeholder="Sub-task title…"
+                  style={{flex:1,fontSize:12,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,outline:"none",fontFamily:"'Jost',sans-serif"}}/>
+                <button onClick={()=>addSubTask(task.id,newSubTitle)}
+                  style={{fontSize:11,fontWeight:600,color:T.forest,background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>Add</button>
+              </div>
+            ) : (
+              <button onClick={()=>{setAddingSubTo(task.id);setNewSubTitle("");}}
+                style={{fontSize:11,color:T.gold,background:"none",border:"none",cursor:"pointer",padding:"7px 0",fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+                + Add sub-task
+              </button>
+            )}
+          </div>
         </div>
         <div style={{padding:"14px 20px 50px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
           <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
