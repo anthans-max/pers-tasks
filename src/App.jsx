@@ -181,7 +181,7 @@ export default function App() {
       supabase.from("tm_tasks").select("*").eq("user_id", USER_ID).eq("completed", false),
       supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID),
       supabase.from("tm_news_summaries").select("*").order("story_date", { ascending: false }).limit(30),
-      supabase.from("tm_sub_tasks").select("*").eq("user_id", USER_ID),
+      supabase.from("tm_sub_tasks").select("*"),
     ]).then(([p, t, e, n, s]) => {
       if (p.error) console.error("fetch tm_projects:", p.error.message);
       else setProjects(p.data.map(r => ({ id: r.id, name: r.name, color: r.color })));

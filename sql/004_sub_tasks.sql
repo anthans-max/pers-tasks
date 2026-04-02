@@ -13,8 +13,12 @@ CREATE INDEX IF NOT EXISTS idx_sub_tasks_parent ON tm_sub_tasks(parent_task_id);
 
 ALTER TABLE tm_sub_tasks ENABLE ROW LEVEL SECURITY;
 
+-- Separate SELECT and INSERT/UPDATE/DELETE policies for Supabase anon key compatibility
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tm_sub_tasks' AND policyname = 'allow_all_sub_tasks') THEN
-    CREATE POLICY "allow_all_sub_tasks" ON tm_sub_tasks FOR ALL USING (true);
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tm_sub_tasks' AND policyname = 'allow_read_sub_tasks') THEN
+    CREATE POLICY "allow_read_sub_tasks" ON tm_sub_tasks FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tm_sub_tasks' AND policyname = 'allow_write_sub_tasks') THEN
+    CREATE POLICY "allow_write_sub_tasks" ON tm_sub_tasks FOR ALL USING (true) WITH CHECK (true);
   END IF;
 END $$;
