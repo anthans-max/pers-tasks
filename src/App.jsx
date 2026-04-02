@@ -388,7 +388,7 @@ export default function App() {
   };
   const addSubTask = (parentTaskId, title) => {
     if (!title.trim()) return;
-    const id = uid();
+    const id = crypto.randomUUID();
     const currentSubs = subTasks[parentTaskId] || [];
     const sub = { id, parentTaskId, title: title.trim(), isComplete: false, sortOrder: currentSubs.length };
     setSubTasks(prev => ({ ...prev, [parentTaskId]: [...(prev[parentTaskId] || []), sub] }));
