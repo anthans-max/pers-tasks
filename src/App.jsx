@@ -58,8 +58,18 @@ const fmtDate = (d) => {
   if (diff > 1 && diff <= 7) return DAYS[dt.getDay()];
   return `${mo[dt.getMonth()]} ${dt.getDate()}${dt.getFullYear() !== now.getFullYear() ? " " + dt.getFullYear() : ""}`;
 };
+const fmtDateRange = (s, e) => {
+  if (!s || !e) return fmtDate(e || s);
+  const sd = new Date(s + "T00:00:00"), ed = new Date(e + "T00:00:00");
+  const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  if (sd.getMonth() === ed.getMonth() && sd.getFullYear() === ed.getFullYear())
+    return `${mo[sd.getMonth()]} ${sd.getDate()} – ${ed.getDate()}`;
+  return `${mo[sd.getMonth()]} ${sd.getDate()} – ${mo[ed.getMonth()]} ${ed.getDate()}`;
+};
 const isOverdue = (d) => { if (!d) return false; return new Date(d + "T00:00:00") < new Date(new Date().setHours(0,0,0,0)); };
 const isToday = (d) => { if (!d) return false; const n = new Date(); n.setHours(0,0,0,0); return new Date(d + "T00:00:00").getTime() === n.getTime(); };
+const isActive = (s, e) => { if (!s || !e) return false; const now = new Date(); now.setHours(0,0,0,0); return new Date(s+"T00:00:00") <= now && now <= new Date(e+"T00:00:00"); };
+const matchesDay = (x, day) => { if (x.startDate && x.dueDate) return x.startDate <= day && day <= x.dueDate; return x.dueDate === day; };
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
 const I = {
@@ -151,6 +161,8 @@ export default function App() {
   const [newTitle, setNewTitle] = useState("");
   const [newPrio, setNewPrio] = useState(4);
   const [newDate, setNewDate] = useState("");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newDateRange, setNewDateRange] = useState(false);
   const [newProject, setNewProject] = useState("lotus");
   const [assigningEmail, setAssigningEmail] = useState(null);
   const [selectedEmails, setSelectedEmails] = useState(new Set());
@@ -188,7 +200,7 @@ export default function App() {
       if (t.error) console.error("fetch tm_tasks:", t.error.message);
       else setTasks(t.data.map(r => ({
         id: r.id, projectId: r.project_id, title: r.title, notes: r.notes ?? "",
-        priority: r.priority, dueDate: r.due_date ?? "", completed: r.completed,
+        priority: r.priority, dueDate: r.due_date ?? "", startDate: r.start_date ?? "", completed: r.completed,
         recurring: r.recurring ?? false, subtasks: r.subtasks ?? 0,
         subtasksDone: r.subtasks_done ?? 0, fromEmail: r.from_email,
         emailFrom: r.email_from ?? "",
@@ -309,8 +321,8 @@ export default function App() {
 
   const visTasks = useMemo(() => {
     let t = tasks.filter(x => !x.completed);
-    if (view==="today") t = t.filter(x => x.dueDate===(dayFilter||TODAY));
-    else if (dayFilter) t = t.filter(x => x.dueDate===dayFilter);
+    if (view==="today") t = t.filter(x => matchesDay(x, dayFilter||TODAY));
+    else if (dayFilter) t = t.filter(x => matchesDay(x, dayFilter));
     if (projectFilter!=="all") t = t.filter(x => x.projectId===projectFilter);
     return t;
   }, [tasks, view, dayFilter, projectFilter, TODAY]);
@@ -335,9 +347,18 @@ export default function App() {
     const byDate = {};
     all.forEach(t => {
       if (!t.dueDate) return;
-      const d = new Date(t.dueDate+"T00:00:00");
-      if (d.getFullYear()===year&&d.getMonth()===month) {
-        const k = d.getDate(); if(!byDate[k]) byDate[k]=[]; byDate[k].push(t);
+      if (t.startDate && t.dueDate) {
+        const s = new Date(t.startDate+"T00:00:00"), e = new Date(t.dueDate+"T00:00:00");
+        for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) {
+          if (d.getFullYear()===year&&d.getMonth()===month) {
+            const k = d.getDate(); if(!byDate[k]) byDate[k]=[]; byDate[k].push(t);
+          }
+        }
+      } else {
+        const d = new Date(t.dueDate+"T00:00:00");
+        if (d.getFullYear()===year&&d.getMonth()===month) {
+          const k = d.getDate(); if(!byDate[k]) byDate[k]=[]; byDate[k].push(t);
+        }
       }
     });
     console.log(`[calData] byDate keys with events:`, Object.keys(byDate));
@@ -347,12 +368,14 @@ export default function App() {
   // Handlers
   const addTask = () => {
     if (!newTitle.trim()) return;
-    const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:newDate,subtasks:0,subtasksDone:0,completed:false,fromEmail:false};
+    const sd = newDateRange ? newStartDate : "";
+    const ed = newDate;
+    const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:ed,startDate:sd&&ed&&sd>ed?ed:sd,subtasks:0,subtasksDone:0,completed:false,fromEmail:false};
     setTasks(p=>[...p,newTask]);
-    setNewTitle(""); setNewPrio(4); setNewDate(""); setAddModal(false);
+    setNewTitle(""); setNewPrio(4); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setAddModal(false);
     supabase.from("tm_tasks").insert({
       id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
-      priority:newTask.priority, due_date:newTask.dueDate||null, completed:false,
+      priority:newTask.priority, due_date:newTask.dueDate||null, start_date:newTask.startDate||null, completed:false,
       recurring:false, subtasks:0, subtasks_done:0, from_email:false, notes:"",
     }).then(({error})=>{ if(error) console.error("addTask:", error.message); });
   };
@@ -377,6 +400,7 @@ export default function App() {
     if(u.title      !== undefined) patch.title         = u.title;
     if(u.priority   !== undefined) patch.priority      = u.priority;
     if(u.dueDate    !== undefined) patch.due_date       = u.dueDate || null;
+    if(u.startDate  !== undefined) patch.start_date     = u.startDate || null;
     if(u.projectId  !== undefined) patch.project_id    = u.projectId;
     if(u.recurring  !== undefined) patch.recurring     = u.recurring;
     if(u.subtasks   !== undefined) patch.subtasks      = u.subtasks;
@@ -431,14 +455,14 @@ export default function App() {
   };
   const assignEmail = (eid,projId) => {
     const et = emailTasks.find(e=>e.id===eid); if(!et) return;
-    const newTask = {id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom};
+    const newTask = {id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",startDate:"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom};
     setTasks(p=>[...p,newTask]);
     setEmailTasks(p=>p.filter(e=>e.id!==eid));
     setAssigningEmail(null);
     Promise.all([
       supabase.from("tm_tasks").insert({
         id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
-        priority:newTask.priority, due_date:newTask.dueDate||null, completed:false,
+        priority:newTask.priority, due_date:newTask.dueDate||null, start_date:null, completed:false,
         recurring:false, subtasks:0, subtasks_done:0, from_email:true,
         email_from:newTask.emailFrom, notes:"",
       }),
@@ -453,7 +477,7 @@ export default function App() {
     const ids = [...selectedEmails];
     const newTasks = ids.map(eid => {
       const et = emailTasks.find(e=>e.id===eid); if(!et) return null;
-      return {id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom};
+      return {id:uid(),projectId:projId,title:et.title,priority:et.priority,dueDate:et.dueDate||"",startDate:"",subtasks:0,subtasksDone:0,completed:false,fromEmail:true,emailFrom:et.emailFrom};
     }).filter(Boolean);
     setTasks(p=>[...p,...newTasks]);
     setEmailTasks(p=>p.filter(e=>!selectedEmails.has(e.id)));
@@ -461,7 +485,7 @@ export default function App() {
     Promise.all([
       supabase.from("tm_tasks").insert(newTasks.map(t=>({
         id:t.id, user_id:USER_ID, project_id:t.projectId, title:t.title,
-        priority:t.priority, due_date:t.dueDate||null, completed:false,
+        priority:t.priority, due_date:t.dueDate||null, start_date:null, completed:false,
         recurring:false, subtasks:0, subtasks_done:0, from_email:true,
         email_from:t.emailFrom, notes:"",
       }))),
@@ -656,7 +680,7 @@ export default function App() {
 
   const TaskCard = ({task}) => {
     const sel = selectedTask?.id===task.id;
-    const od=isOverdue(task.dueDate), td=isToday(task.dueDate);
+    const od=isOverdue(task.dueDate), td=isToday(task.dueDate), ac=isActive(task.startDate, task.dueDate);
     const isExpanded = expandedTasks.has(task.id);
     return (
       <>
@@ -678,8 +702,8 @@ export default function App() {
             <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text}}>{task.title}</div>
             <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
               {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
-              {task.dueDate&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:td?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
-                📅 {fmtDate(task.dueDate)}{task.recurring&&<Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/>}
+              {(task.startDate||task.dueDate)&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:(td||ac)?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
+                📅 {task.startDate?fmtDateRange(task.startDate,task.dueDate):fmtDate(task.dueDate)}{task.recurring&&<Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/>}
               </span>}
               {task.subtasks>0&&<span onClick={e=>{e.stopPropagation();setExpandedTasks(p=>{const n=new Set(p);n.has(task.id)?n.delete(task.id):n.add(task.id);return n;});}}
                 style={{fontSize:11,color:T.textMute,display:"flex",alignItems:"center",gap:3,cursor:"pointer"}}>
@@ -1033,17 +1057,30 @@ export default function App() {
             {isMobile&&<div style={{width:36,height:4,borderRadius:2,background:T.borderS,margin:"0 auto 20px"}}/>}
             <h3 style={{margin:"0 0 20px",fontSize:18,fontWeight:700,fontFamily:"'Playfair Display',serif",color:T.gold}}>New Task</h3>
             <input autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addTask();if(e.key==="Escape")setAddModal(false);}} placeholder="Task name..." style={{...inp,fontSize:15,padding:"12px 16px",marginBottom:14}}/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+            <div style={{display:"grid",gridTemplateColumns:newDateRange?"1fr 1fr":"1fr 1fr 1fr",gap:12,marginBottom:newDateRange?12:20}}>
               {[
                 {label:"Priority",content:<select value={newPrio} onChange={e=>setNewPrio(Number(e.target.value))} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                {label:"Due Date",content:<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/>},
-                {label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+                ...(newDateRange
+                  ? [{label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>}]
+                  : [
+                    {label:"Due Date",content:<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/>},
+                    {label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+                  ]),
               ].map(({label,content})=>(
                 <div key={label}>
                   <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>
                   {content}
                 </div>
               ))}
+            </div>
+            {newDateRange&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+              <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Start Date</div><input type="date" value={newStartDate} onChange={e=>setNewStartDate(e.target.value)} style={inp}/></div>
+              <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>End Date</div><input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/></div>
+            </div>}
+            <div style={{marginBottom:20}}>
+              <button onClick={()=>{setNewDateRange(!newDateRange);if(!newDateRange)setNewStartDate("");}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+                {newDateRange?"- Single date":"+ Date range"}
+              </button>
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <button onClick={()=>setAddModal(false)} style={{padding:"10px 20px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
@@ -1067,14 +1104,25 @@ export default function App() {
               </div>
             </div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,color:T.text,lineHeight:1.35,marginBottom:18}}>{selectedTask.title}</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+            <div style={{display:"grid",gridTemplateColumns:selectedTask.startDate?"1fr 1fr":"1fr 1fr 1fr",gap:12,marginBottom:selectedTask.startDate?12:20}}>
               {[
-                {label:"Due Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>},
+                ...(selectedTask.startDate
+                  ? [{label:"Start Date",content:<input type="date" value={selectedTask.startDate||""} onChange={e=>updateTask(selectedTask.id,{startDate:e.target.value})} style={{...inp,color:T.gold,fontWeight:600}}/>},
+                     {label:"End Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>}]
+                  : [{label:"Due Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>}]),
                 {label:"Priority",content:<select value={selectedTask.priority} onChange={e=>updateTask(selectedTask.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                {label:"Project",content:<select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+                ...(!selectedTask.startDate?[{label:"Project",content:<select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>}]:[]),
               ].map(({label,content})=>(
                 <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
               ))}
+            </div>
+            {selectedTask.startDate&&<div style={{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:12}}>
+              <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Project</div><select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+            </div>}
+            <div style={{marginBottom:12}}>
+              <button onClick={()=>{if(selectedTask.startDate){updateTask(selectedTask.id,{startDate:""});}else{updateTask(selectedTask.id,{startDate:selectedTask.dueDate||todayStr()});}}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+                {selectedTask.startDate?"- Single date":"+ Date range"}
+              </button>
             </div>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>
@@ -1229,13 +1277,31 @@ export default function App() {
           <input value={task.title} onChange={e=>updateTask(task.id,{title:e.target.value})}
             style={{width:"100%",background:"transparent",border:"none",color:T.text,fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:600,outline:"none",lineHeight:1.35,padding:0}}
           />
-          {[
-            {label:"Due Date",content:<input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/>},
-            {label:"Priority",content:<select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-            {label:"Project",content:<select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
-          ].map(({label,content})=>(
-            <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
-          ))}
+          {task.startDate ? (
+            <>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Start Date</div><input type="date" value={task.startDate||""} onChange={e=>updateTask(task.id,{startDate:e.target.value})} style={{...inp,color:T.gold,fontWeight:600}}/></div>
+                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>End Date</div><input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/></div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Priority</div><select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select></div>
+                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Project</div><select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+              </div>
+            </>
+          ) : (
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+              {[
+                {label:"Due Date",content:<input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/>},
+                {label:"Priority",content:<select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
+                {label:"Project",content:<select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
+              ].map(({label,content})=>(
+                <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
+              ))}
+            </div>
+          )}
+          <button onClick={()=>{if(task.startDate){updateTask(task.id,{startDate:""});}else{updateTask(task.id,{startDate:task.dueDate||todayStr()});}}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+            {task.startDate?"- Single date":"+ Date range"}
+          </button>
           {task.fromEmail&&<div style={{background:T.emailS,border:`1px solid ${T.emailS}`,borderRadius:8,padding:"10px 12px"}}>
             <div style={{fontSize:10,fontWeight:700,color:T.email,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>Email Origin</div>
             <div style={{fontSize:12,color:T.textSoft}}>From: {task.emailFrom}</div>
