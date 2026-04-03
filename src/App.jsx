@@ -1375,16 +1375,14 @@ export default function App() {
         {/* Greeting */}
         <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.22em",textTransform:"uppercase",color:T.textMute,marginBottom:8}}>Good Morning</div>
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",fontWeight:600,color:T.text,marginBottom:6}}>Welcome back, Anthan</div>
-        <div style={{fontSize:"0.82rem",color:T.textMute,marginBottom: yssQuote.topic ? 10 : 40}}>{dateStr}  ·  Los Angeles</div>
-
-        {/* YSS Topic */}
-        {yssQuote.topic && (
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.68rem",fontWeight:500,letterSpacing:"0.28em",textTransform:"uppercase",color:"#B5703A",marginBottom:32}}>{yssQuote.topic.split("").join(" ")}</div>
-        )}
+        <div style={{fontSize:"0.82rem",color:T.textMute,marginBottom:40}}>{dateStr}  ·  Los Angeles</div>
 
         {/* YSS Quote */}
         {yssQuote.quote && (
           <div style={{maxWidth:620,width:"100%",textAlign:"left",marginBottom:48,padding:"0 8px"}}>
+            {yssQuote.topic && (
+              <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.2em",textTransform:"uppercase",color:"#B5703A",border:"1px solid #B5703A",borderRadius:20,padding:"3px 14px",display:"inline-block",marginBottom:"0.75rem"}}>{yssQuote.topic}</div>
+            )}
             <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.2rem",fontStyle:"italic",lineHeight:1.7,color:T.text,marginBottom:14}}>
               "{yssQuote.quote}"
             </div>
