@@ -40,11 +40,11 @@ const DEFAULT_TASKS = [
   { id: "t15", projectId: "sundermed", title: "Cancel LinkedIn Premium",                            priority: 1, dueDate: "2026-04-23", completed: false, fromEmail: false },
   { id: "t16", projectId: "sundermed", title: "Call DEA",                                           priority: 1, dueDate: "",           completed: false, fromEmail: false, subtasks: 1, subtasksDone: 0 },
   { id: "t17", projectId: "sundermed", title: "Transfer funds from pension to IRA",                 priority: 1, dueDate: "2025-08-31", completed: false, fromEmail: false },
-  { id: "t18", projectId: "sundermed", title: "LCMG statement of info",                             priority: 2, dueDate: "2026-03-31", completed: false, fromEmail: false, recurring: true },
-  { id: "t19", projectId: "sundermed", title: "Sunder Med statement of info",                       priority: 2, dueDate: "2026-10-31", completed: false, fromEmail: false, recurring: true },
+  { id: "t18", projectId: "sundermed", title: "LCMG statement of info",                             priority: 2, dueDate: "2026-03-31", completed: false, fromEmail: false, recurring: true, recurrence: "monthly" },
+  { id: "t19", projectId: "sundermed", title: "Sunder Med statement of info",                       priority: 2, dueDate: "2026-10-31", completed: false, fromEmail: false, recurring: true, recurrence: "monthly" },
   { id: "t20", projectId: "sundermed", title: "Peacock statement of information",                   priority: 2, dueDate: "2027-05-31", completed: false, fromEmail: false },
   { id: "t21", projectId: "sundermed", title: "Website for peacock",                                priority: 1, dueDate: "",           completed: false, fromEmail: false },
-  { id: "t22", projectId: "sundermed", title: "Sunder Medical Month-end",                           priority: 4, dueDate: "2026-04-01", completed: false, fromEmail: false, recurring: true, subtasks: 5, subtasksDone: 5 },
+  { id: "t22", projectId: "sundermed", title: "Sunder Medical Month-end",                           priority: 4, dueDate: "2026-04-01", completed: false, fromEmail: false, recurring: true, recurrence: "monthly", subtasks: 5, subtasksDone: 5 },
   { id: "t23", projectId: "sundermed", title: "Southwest refund for mom",                           priority: 4, dueDate: "",           completed: false, fromEmail: false },
   { id: "t24", projectId: "personal",  title: "Call SRF re app",                                    priority: 2, dueDate: "",           completed: false, fromEmail: false },
   { id: "t25", projectId: "personal",  title: "SimpliSafe - reduce plan",                           priority: 4, dueDate: "2026-09-06", completed: false, fromEmail: false },
@@ -52,7 +52,7 @@ const DEFAULT_TASKS = [
   { id: "t27", projectId: "personal",  title: "Create social security account on ssa.gov",          priority: 4, dueDate: "",           completed: false, fromEmail: false },
   { id: "t28", projectId: "personal",  title: "Lincoln Roadside Assistance",                        priority: 4, dueDate: "",           completed: false, fromEmail: false },
   { id: "t29", projectId: "aarasaan",  title: "Amazon jobs site",                                   priority: 1, dueDate: "",           completed: false, fromEmail: false },
-  { id: "t30", projectId: "aarasaan",  title: "Statement of incorporation for AaraSaan",            priority: 2, dueDate: "2026-11-30", completed: false, fromEmail: false, recurring: true },
+  { id: "t30", projectId: "aarasaan",  title: "Statement of incorporation for AaraSaan",            priority: 2, dueDate: "2026-11-30", completed: false, fromEmail: false, recurring: true, recurrence: "monthly" },
 ];
 
 // ─── camelCase → snake_case mappers ──────────────────────────────────────────
@@ -76,11 +76,13 @@ function mapTask(t) {
     priority:      t.priority,
     due_date:      t.dueDate || null,
     completed:     t.completed,
-    recurring:     t.recurring ?? false,
-    subtasks:      t.subtasks ?? 0,
-    subtasks_done: t.subtasksDone ?? 0,
-    from_email:    t.fromEmail,
-    email_from:    t.emailFrom ?? null,
+    recurring:            t.recurring ?? false,
+    recurrence:           t.recurrence ?? null,
+    recurring_parent_id:  t.recurringParentId ?? null,
+    subtasks:             t.subtasks ?? 0,
+    subtasks_done:        t.subtasksDone ?? 0,
+    from_email:           t.fromEmail,
+    email_from:           t.emailFrom ?? null,
   };
 }
 

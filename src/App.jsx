@@ -46,6 +46,14 @@ const T = {
 const PC = { 1:"#B94040", 2:"#B5703A", 3:"#3D6348", 4:"#A89070" };
 const PG = { 1:"rgba(185,64,64,0.12)", 2:"#FAF0E6", 3:"#EAF2EC", 4:"rgba(61,46,30,0.05)" };
 const PL = { 1:"Urgent", 2:"High", 3:"Medium", 4:"None" };
+const RECURRENCE_OPTIONS = [
+  { value: "", label: "None" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Biweekly" },
+  { value: "monthly", label: "Monthly" },
+];
+const RL = { daily: "Daily", weekly: "Weekly", biweekly: "Biweekly", monthly: "Monthly" };
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
@@ -71,6 +79,17 @@ const isToday = (d) => { if (!d) return false; const n = new Date(); n.setHours(
 const isActive = (s, e) => { if (!s || !e) return false; const now = new Date(); now.setHours(0,0,0,0); return new Date(s+"T00:00:00") <= now && now <= new Date(e+"T00:00:00"); };
 const matchesDay = (x, day) => { if (x.startDate && x.dueDate) return x.startDate <= day && day <= x.dueDate; return x.dueDate === day; };
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const computeNextDate = (dateStr, pattern) => {
+  if (!dateStr || !pattern) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  switch (pattern) {
+    case "daily":    d.setDate(d.getDate() + 1); break;
+    case "weekly":   d.setDate(d.getDate() + 7); break;
+    case "biweekly": d.setDate(d.getDate() + 14); break;
+    case "monthly":  d.setMonth(d.getMonth() + 1); break;
+  }
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
 
 const I = {
   tasks:"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
@@ -164,6 +183,7 @@ export default function App() {
   const [newStartDate, setNewStartDate] = useState("");
   const [newDateRange, setNewDateRange] = useState(false);
   const [newProject, setNewProject] = useState("lotus");
+  const [newRecurrence, setNewRecurrence] = useState("");
   const [assigningEmail, setAssigningEmail] = useState(null);
   const [selectedEmails, setSelectedEmails] = useState(new Set());
   const [batchProject, setBatchProject] = useState("lotus");
@@ -201,8 +221,8 @@ export default function App() {
       else setTasks(t.data.map(r => ({
         id: r.id, projectId: r.project_id, title: r.title, notes: r.notes ?? "",
         priority: r.priority, dueDate: r.due_date ?? "", startDate: r.start_date ?? "", completed: r.completed,
-        recurring: r.recurring ?? false, subtasks: r.subtasks ?? 0,
-        subtasksDone: r.subtasks_done ?? 0, fromEmail: r.from_email,
+        recurring: r.recurring ?? false, recurrence: r.recurrence ?? "", recurringParentId: r.recurring_parent_id ?? "",
+        subtasks: r.subtasks ?? 0, subtasksDone: r.subtasks_done ?? 0, fromEmail: r.from_email,
         emailFrom: r.email_from ?? "",
       })));
       if (e.error) console.error("fetch tm_email_tasks:", e.error.message);
@@ -370,20 +390,54 @@ export default function App() {
     if (!newTitle.trim()) return;
     const sd = newDateRange ? newStartDate : "";
     const ed = newDate;
-    const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:ed,startDate:sd&&ed&&sd>ed?ed:sd,subtasks:0,subtasksDone:0,completed:false,fromEmail:false};
+    const rec = newRecurrence || "";
+    const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:ed,startDate:sd&&ed&&sd>ed?ed:sd,subtasks:0,subtasksDone:0,completed:false,fromEmail:false,recurring:!!rec,recurrence:rec,recurringParentId:""};
     setTasks(p=>[...p,newTask]);
-    setNewTitle(""); setNewPrio(4); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setAddModal(false);
+    setNewTitle(""); setNewPrio(4); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setNewRecurrence(""); setAddModal(false);
     supabase.from("tm_tasks").insert({
       id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
       priority:newTask.priority, due_date:newTask.dueDate||null, start_date:newTask.startDate||null, completed:false,
-      recurring:false, subtasks:0, subtasks_done:0, from_email:false, notes:"",
+      recurring:!!rec, recurrence:rec||null, recurring_parent_id:null,
+      subtasks:0, subtasks_done:0, from_email:false, notes:"",
     }).then(({error})=>{ if(error) console.error("addTask:", error.message); });
   };
-  const toggleDone = (id) => {
+  const toggleDone = async (id) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
     setTasks(p=>p.map(t=>t.id===id?{...t,completed:true}:t));
     if(selectedTask?.id===id) setSelectedTask(null);
-    supabase.from("tm_tasks").update({completed:true}).eq("id",id)
-      .then(({error})=>{ if(error) console.error("toggleDone:", error.message); });
+    const {error} = await supabase.from("tm_tasks").update({completed:true}).eq("id",id);
+    if (error) { console.error("toggleDone:", error.message); return; }
+    // Spawn next instance only if recurring AND has a due date
+    if (!task.recurrence || !task.dueDate) return;
+    const nextDue = computeNextDate(task.dueDate, task.recurrence);
+    const nextStart = task.startDate ? computeNextDate(task.startDate, task.recurrence) : "";
+    const parentId = task.recurringParentId || task.id;
+    const nextId = uid();
+    const existingSubs = subTasks[id] || [];
+    const clonedSubs = existingSubs.map((sub, i) => ({
+      id: crypto.randomUUID(), parentTaskId: nextId, title: sub.title, isComplete: false, sortOrder: i,
+    }));
+    const nextTask = {
+      id: nextId, projectId: task.projectId, title: task.title, priority: task.priority,
+      dueDate: nextDue, startDate: nextStart, completed: false,
+      recurring: true, recurrence: task.recurrence, recurringParentId: parentId,
+      fromEmail: false, emailFrom: "", notes: task.notes || "",
+      subtasks: clonedSubs.length, subtasksDone: 0,
+    };
+    setTasks(p => [...p, nextTask]);
+    if (clonedSubs.length) setSubTasks(prev => ({...prev, [nextId]: clonedSubs}));
+    supabase.from("tm_tasks").insert({
+      id: nextId, user_id: USER_ID, project_id: nextTask.projectId, title: nextTask.title,
+      priority: nextTask.priority, due_date: nextTask.dueDate || null, start_date: nextTask.startDate || null,
+      completed: false, recurring: true, recurrence: nextTask.recurrence, recurring_parent_id: parentId,
+      subtasks: clonedSubs.length, subtasks_done: 0, from_email: false, notes: nextTask.notes,
+    }).then(({error}) => { if (error) console.error("spawn recurring task:", error.message); });
+    if (clonedSubs.length) {
+      supabase.from("tm_sub_tasks").insert(
+        clonedSubs.map(s => ({ id: s.id, parent_task_id: nextId, user_id: USER_ID, title: s.title, is_complete: false, sort_order: s.sortOrder }))
+      ).then(({error}) => { if (error) console.error("clone sub-tasks:", error.message); });
+    }
   };
   const deleteTask = (id) => {
     setTasks(p=>p.filter(t=>t.id!==id));
@@ -403,6 +457,8 @@ export default function App() {
     if(u.startDate  !== undefined) patch.start_date     = u.startDate || null;
     if(u.projectId  !== undefined) patch.project_id    = u.projectId;
     if(u.recurring  !== undefined) patch.recurring     = u.recurring;
+    if(u.recurrence !== undefined) { patch.recurrence = u.recurrence || null; patch.recurring = !!u.recurrence; }
+    if(u.recurringParentId !== undefined) patch.recurring_parent_id = u.recurringParentId || null;
     if(u.subtasks   !== undefined) patch.subtasks      = u.subtasks;
     if(u.subtasksDone !== undefined) patch.subtasks_done = u.subtasksDone;
     if(u.notes      !== undefined) patch.notes         = u.notes;
@@ -703,7 +759,7 @@ export default function App() {
             <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
               {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
               {(task.startDate||task.dueDate)&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:(td||ac)?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
-                📅 {task.startDate?fmtDateRange(task.startDate,task.dueDate):fmtDate(task.dueDate)}{task.recurring&&<Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/>}
+                📅 {task.startDate?fmtDateRange(task.startDate,task.dueDate):fmtDate(task.dueDate)}{task.recurrence&&<><Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/><span style={{fontSize:9,color:T.textMute,fontWeight:600,marginLeft:1}}>{RL[task.recurrence]}</span></>}
               </span>}
               {task.subtasks>0&&<span onClick={e=>{e.stopPropagation();setExpandedTasks(p=>{const n=new Set(p);n.has(task.id)?n.delete(task.id):n.add(task.id);return n;});}}
                 style={{fontSize:11,color:T.textMute,display:"flex",alignItems:"center",gap:3,cursor:"pointer"}}>
@@ -1082,6 +1138,12 @@ export default function App() {
                 {newDateRange?"- Single date":"+ Date range"}
               </button>
             </div>
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Syne',sans-serif"}}>Repeat</div>
+              <select value={newRecurrence} onChange={e=>setNewRecurrence(e.target.value)} disabled={!newDate} style={{...inp,opacity:newDate?1:0.4}}>
+                {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <button onClick={()=>setAddModal(false)} style={{padding:"10px 20px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
               <button onClick={addTask} style={{padding:"10px 28px",background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Add Task</button>
@@ -1123,6 +1185,12 @@ export default function App() {
               <button onClick={()=>{if(selectedTask.startDate){updateTask(selectedTask.id,{startDate:""});}else{updateTask(selectedTask.id,{startDate:selectedTask.dueDate||todayStr()});}}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
                 {selectedTask.startDate?"- Single date":"+ Date range"}
               </button>
+            </div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Syne',sans-serif"}}>Repeat</div>
+              <select value={selectedTask.recurrence||""} onChange={e=>updateTask(selectedTask.id,{recurrence:e.target.value||"",recurring:!!e.target.value})} disabled={!selectedTask.dueDate} style={{...inp,opacity:selectedTask.dueDate?1:0.4}}>
+                {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
             <div style={{marginBottom:20}}>
               <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>
@@ -1302,6 +1370,12 @@ export default function App() {
           <button onClick={()=>{if(task.startDate){updateTask(task.id,{startDate:""});}else{updateTask(task.id,{startDate:task.dueDate||todayStr()});}}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
             {task.startDate?"- Single date":"+ Date range"}
           </button>
+          <div style={{marginTop:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Syne',sans-serif"}}>Repeat</div>
+            <select value={task.recurrence||""} onChange={e=>updateTask(task.id,{recurrence:e.target.value||"",recurring:!!e.target.value})} disabled={!task.dueDate} style={{...inp,opacity:task.dueDate?1:0.4}}>
+              {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
           {task.fromEmail&&<div style={{background:T.emailS,border:`1px solid ${T.emailS}`,borderRadius:8,padding:"10px 12px"}}>
             <div style={{fontSize:10,fontWeight:700,color:T.email,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>Email Origin</div>
             <div style={{fontSize:12,color:T.textSoft}}>From: {task.emailFrom}</div>
