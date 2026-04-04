@@ -1512,7 +1512,16 @@ export default function App() {
           {emailTasks.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:T.red,color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{emailTasks.length}</span>}
         </button>
         <button onClick={()=>setAddModal(true)} style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:T.bg,fontWeight:700,lineHeight:1}}>+</button>
-        <div style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:`2px solid ${T.forestMid}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:13,color:T.bg,fontFamily:"'Syne',sans-serif"}}>A</div>
+        {(view==="calendar"||view==="email"||view==="news")&&(
+          <button onClick={()=>runSync(view==="email"?"email":view==="news"?"news":"calendar")} disabled={!!syncing}
+            style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:`2px solid ${T.forestMid}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:syncing?"not-allowed":"pointer",padding:0}}>
+            {syncing===(view==="email"?"email":view==="news"?"news":"calendar") ? (
+              <span style={{display:"inline-block",width:14,height:14,border:`2px solid ${T.bg}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+            ) : (
+              <Ico d={I.recur} size={16} color={T.bg}/>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
