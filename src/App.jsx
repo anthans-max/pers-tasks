@@ -381,6 +381,49 @@ export default function App() {
         }
       }
     });
+    // --- Projected recurring occurrences (display-only, no DB rows) ---
+    const monthStart = `${year}-${String(month+1).padStart(2,'0')}-01`;
+    const monthEnd   = `${year}-${String(month+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+    tasks.filter(t => t.recurrence && t.dueDate && !t.completed).forEach(t => {
+      if (t.startDate && t.dueDate) {
+        let nextStart = computeNextDate(t.startDate, t.recurrence);
+        let nextDue = computeNextDate(t.dueDate, t.recurrence);
+        let count = 0;
+        while (nextDue >= monthStart && nextStart <= monthEnd && count < 31) {
+          const s = new Date(nextStart+"T00:00:00"), e = new Date(nextDue+"T00:00:00");
+          for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) {
+            if (d.getFullYear()===year&&d.getMonth()===month) {
+              const k = d.getDate();
+              if (!(byDate[k]||[]).some(ex=>ex.title===t.title&&!ex._projected)) {
+                if(!byDate[k]) byDate[k]=[];
+                byDate[k].push({...t, startDate:nextStart, dueDate:nextDue, _projected:true, id:t.id+'_proj_'+nextStart});
+              }
+            }
+          }
+          nextStart = computeNextDate(nextStart, t.recurrence);
+          nextDue = computeNextDate(nextDue, t.recurrence);
+          count++;
+          if (nextStart > monthEnd) break;
+        }
+      } else {
+        let next = computeNextDate(t.dueDate, t.recurrence);
+        let count = 0;
+        while (next <= monthEnd && count < 31) {
+          if (next >= monthStart) {
+            const d = new Date(next+"T00:00:00");
+            if (d.getFullYear()===year&&d.getMonth()===month) {
+              const k = d.getDate();
+              if (!(byDate[k]||[]).some(ex=>ex.title===t.title&&!ex._projected)) {
+                if(!byDate[k]) byDate[k]=[];
+                byDate[k].push({...t, dueDate:next, _projected:true, id:t.id+'_proj_'+next});
+              }
+            }
+          }
+          next = computeNextDate(next, t.recurrence);
+          count++;
+        }
+      }
+    });
     console.log(`[calData] byDate keys with events:`, Object.keys(byDate));
     return {daysInMonth,startPad,byDate};
   }, [calMonth,tasks,emailTasks,gcalEvents,gcalVisible,calendarDbEvents]);
@@ -946,10 +989,11 @@ export default function App() {
                   </div>
                   {dt.slice(0,maxShow).map((t,ti)=>{
                     const p=t._gcal?gcalPill(t):t._calEvent?calEventPill(t):{bg:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",c:t._email?T.email:PC[t.priority]||T.textMute,b:t._email?T.email:PC[t.priority]||T.textMute};
+                    const proj=t._projected;
                     return (
-                      <div key={ti} title={t.title} onClick={()=>!t._gcal&&t.sectionId&&setSelectedTask(t)}
-                        style={{fontSize:10,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,cursor:!t._gcal&&t.sectionId?"pointer":"default"}}
-                      >{t.title}</div>
+                      <div key={ti} title={t.title+(proj?' (projected)':'')} onClick={(e)=>{if(proj){e.stopPropagation();return;}if(!t._gcal&&t.sectionId)setSelectedTask(t);}}
+                        style={{fontSize:10,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,opacity:proj?0.5:1,borderLeftStyle:proj?'dashed':'solid',cursor:!t._gcal&&!proj&&t.sectionId?"pointer":"default"}}
+                      >{proj?'↻ ':''}{t.title}</div>
                     );
                   })}
                   {dt.length>maxShow&&<div style={{fontSize:9,color:T.textMute,padding:"1px 5px"}}>+{dt.length-maxShow} more</div>}
@@ -967,6 +1011,9 @@ export default function App() {
               <span style={{width:10,height:10,borderRadius:3,background:x.b,border:`2px solid ${x.c}`}}/>{x.l}
             </div>
           ))}
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.textSoft,opacity:0.5}}>
+            <span style={{width:10,height:10,borderRadius:3,background:"rgba(61,46,30,0.08)",borderLeft:"2px dashed "+T.textMute}}/>↻ Projected
+          </div>
         </div>
       </div>
     );
