@@ -886,7 +886,7 @@ export default function App() {
     );
   };
 
-  const renderWeekStrip = (compact=false, padH=compact?28:16) => (
+  const renderWeekStrip = (compact=false, padH=compact?32:16) => (
     <div style={{display:"flex",gap:compact?4:2,overflowX:"auto",padding:`12px ${padH}px`,borderBottom:`1px solid ${T.borderS}`,scrollbarWidth:"none",flexShrink:0,alignItems:"center"}}>
       {weekDays.map(d=>(
         <div key={d.date} onClick={()=>{setDayFilter(dayFilter===d.date?null:d.date);if(view!=="tasks"&&view!=="today")setView("tasks");}}
@@ -918,10 +918,10 @@ export default function App() {
     <div style={{display:"flex",gap:6,padding:`12px ${padH}px 0`,overflowX:"auto",scrollbarWidth:"none",flexShrink:0}}>
       {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>(
         <div key={f.id} onClick={()=>setProjectFilter(f.id)}
-          style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
-            background:projectFilter===f.id?T.forest:T.bg,
-            border:`1px solid ${projectFilter===f.id?T.forest:T.border}`,
-            color:projectFilter===f.id?T.bg:T.textSoft,
+          style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:projectFilter===f.id?600:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
+            background:projectFilter===f.id?T.forest:"transparent",
+            border:`1px solid ${projectFilter===f.id?T.forest:"rgba(45,74,53,0.4)"}`,
+            color:projectFilter===f.id?T.bg:T.forestMid,
           }}
         >{f.name}</div>
       ))}
@@ -1208,7 +1208,7 @@ export default function App() {
                 <span style={{width:6,height:6,borderRadius:"50%",background:"currentColor",display:"inline-block"}}/>{PL[selectedTask.priority]}
               </div>
               <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>deleteTask(selectedTask.id)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.trash} size={16} color={T.red}/></button>
+                <button onClick={()=>deleteTask(selectedTask.id)} style={{background:T.red,border:"none",cursor:"pointer",padding:6,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}><Ico d={I.trash} size={16} color="#fff"/></button>
                 <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={16} color={T.textMute}/></button>
               </div>
             </div>
@@ -1304,69 +1304,69 @@ export default function App() {
 
   // ── Desktop Sidebar ──────────────────────────────────────────
   const renderSidebar = () => (
-    <div style={{width:248,minWidth:248,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{padding:"20px 20px 14px",borderBottom:`1px solid ${T.borderS}`}}>
+    <div style={{width:248,minWidth:248,background:T.forest,borderRight:"1px solid rgba(255,255,255,0.12)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{padding:"20px 20px 14px",borderBottom:"1px solid rgba(255,255,255,0.12)"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-          <div style={{width:38,height:38,borderRadius:"50%",background:T.forest,border:`2px solid ${T.forestMid}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:14,color:T.bg,flexShrink:0,fontFamily:"'Syne',sans-serif"}}>A</div>
+          <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.15)",border:"2px solid rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:14,color:"#fff",flexShrink:0,fontFamily:"'Syne',sans-serif"}}>A</div>
           <div>
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:T.text,fontWeight:600}}>Anthan</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:11,color:T.textMute,letterSpacing:"0.05em"}}>Lotus List</div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:"#fff",fontWeight:600}}>Anthan</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:11,color:"rgba(255,255,255,0.55)",letterSpacing:"0.05em"}}>Lotus List</div>
           </div>
         </div>
         <button onClick={()=>{setNewProject(projectFilter==="all"?projects[0]?.id:projectFilter);setAddModal(true);}}
-          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:T.forest,border:"none",borderRadius:100,color:T.bg,fontSize:13,fontWeight:400,letterSpacing:"0.12em",cursor:"pointer",fontFamily:"'Jost', sans-serif",justifyContent:"center"}}>
-          <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(250,247,242,0.18)",color:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:400,flexShrink:0}}>+</div>
+          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.25)",borderRadius:100,color:"#fff",fontSize:13,fontWeight:400,letterSpacing:"0.12em",cursor:"pointer",fontFamily:"'Jost', sans-serif",justifyContent:"center"}}>
+          <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.2)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:400,flexShrink:0}}>+</div>
           Add task
         </button>
       </div>
 
       <div style={{padding:"12px 12px 4px",flexShrink:0}}>
-        <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute,padding:"0 8px 8px"}}>Views</div>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.55)",padding:"0 8px 8px"}}>Views</div>
         {[
-          {key:"tasks",icon:I.tasks,label:"All Tasks",badge:openCount,badgeBg:T.surface,badgeC:T.textMute},
-          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.forest,badgeC:T.bg},
+          {key:"tasks",icon:I.tasks,label:"All Tasks",badge:openCount,badgeBg:"rgba(255,255,255,0.15)",badgeC:"#fff"},
+          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.gold,badgeC:"#fff"},
           {key:"calendar",icon:I.cal,label:"Calendar",badge:null},
-          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:T.bg},
+          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:"#fff"},
           {key:"news",icon:I.tasks,label:"News",badge:null},
         ].map(n=>(
           <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,color:view===n.key?T.forest:T.textSoft,background:view===n.key?T.forestPale:"transparent",borderLeft:`3px solid ${view===n.key?T.forest:"transparent"}`,transition:"all 0.15s"}}
-            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(61,46,30,0.05)";e.currentTarget.style.color=T.text;}}}
-            onMouseLeave={e=>{if(view!==n.key){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.textSoft;}}}
+            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,fontWeight:view===n.key?700:400,color:view===n.key?"#fff":"rgba(255,255,255,0.65)",background:view===n.key?"rgba(255,255,255,0.15)":"transparent",border:"none",transition:"all 0.15s"}}
+            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color="#fff";}}}
+            onMouseLeave={e=>{if(view!==n.key){e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.65)";}}}
           >
-            <Ico d={n.icon} size={16} color={view===n.key?T.forest:T.textMute}/>
+            <Ico d={n.icon} size={16} color={view===n.key?"#fff":"rgba(255,255,255,0.55)"}/>
             <span style={{flex:1}}>{n.label}</span>
             {n.badge?<span style={{fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:10,background:n.badgeBg,color:n.badgeC}}>{n.badge}</span>:null}
           </div>
         ))}
       </div>
 
-      <div style={{flex:1,overflowY:"auto",padding:"8px 12px",borderTop:`1px solid ${T.borderS}`,marginTop:6}}>
+      <div style={{flex:1,overflowY:"auto",padding:"8px 12px",borderTop:"1px solid rgba(255,255,255,0.12)",marginTop:6}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 8px 8px"}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute}}>Projects</div>
-          <button onClick={()=>{setModalName("");setShowProjectModal(true);}} style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0.5}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
-            <Ico d={I.plus} size={14} color={T.textSoft}/>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.55)"}}>Projects</div>
+          <button onClick={()=>{setModalName("");setShowProjectModal(true);}} style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
+            <Ico d={I.plus} size={14} color="#fff"/>
           </button>
         </div>
         {sortedProjects.map(p=>{
           const active=projectFilter===p.id&&view==="tasks";
           return (
             <div key={p.id} onClick={()=>{setProjectFilter(p.id);setView("tasks");}}
-              style={{display:"flex",alignItems:"center",gap:9,padding:"7px 10px",borderRadius:8,cursor:"pointer",fontSize:13,marginBottom:1,color:active?T.text:T.textSoft,background:active?"rgba(44,40,32,0.08)":"transparent",transition:"all 0.15s"}}
-              onMouseEnter={e=>{if(!active){e.currentTarget.style.background="rgba(44,40,32,0.04)";e.currentTarget.style.color=T.text;}}}
-              onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.textSoft;}}}
+              style={{display:"flex",alignItems:"center",gap:9,padding:"7px 10px",borderRadius:8,cursor:"pointer",fontSize:13,marginBottom:1,fontWeight:active?700:400,color:active?"#fff":"rgba(255,255,255,0.65)",background:active?"rgba(255,255,255,0.15)":"transparent",transition:"all 0.15s"}}
+              onMouseEnter={e=>{if(!active){e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color="#fff";}}}
+              onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.65)";}}}
             >
               <div style={{width:8,height:8,borderRadius:"50%",background:p.color||T.gold,flexShrink:0}}/>
               <span style={{flex:1}}>{p.name}</span>
-              <span style={{fontSize:11,color:T.textMute}}>{tasks.filter(t=>!t.completed&&t.projectId===p.id).length}</span>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.45)"}}>{tasks.filter(t=>!t.completed&&t.projectId===p.id).length}</span>
             </div>
           );
         })}
       </div>
 
-      <div style={{padding:"10px 16px",borderTop:`1px solid ${T.borderS}`,display:"flex",gap:8}}>
-        <button title="Settings" style={{flex:1,padding:8,borderRadius:8,background:T.surface,border:`1px solid ${T.borderS}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <Ico d={I.settings} size={15} color={T.textMute}/>
+      <div style={{padding:"10px 16px",borderTop:"1px solid rgba(255,255,255,0.12)",display:"flex",gap:8}}>
+        <button title="Settings" style={{flex:1,padding:8,borderRadius:8,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <Ico d={I.settings} size={15} color="rgba(255,255,255,0.55)"/>
         </button>
       </div>
     </div>
@@ -1381,7 +1381,7 @@ export default function App() {
         <div style={{padding:"18px 20px 14px",borderBottom:`1px solid ${T.borderS}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.15em"}}>Task Detail</div>
           <div style={{display:"flex",gap:6}}>
-            <button onClick={()=>deleteTask(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:6,borderRadius:6}} onMouseEnter={e=>e.currentTarget.style.background="rgba(185,64,64,0.10)"} onMouseLeave={e=>e.currentTarget.style.background="none"}><Ico d={I.trash} size={15} color={T.red}/></button>
+            <button onClick={()=>deleteTask(task.id)} style={{background:T.red,border:"none",cursor:"pointer",padding:6,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}><Ico d={I.trash} size={15} color="#fff"/></button>
             <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={15} color={T.textMute}/></button>
           </div>
         </div>
@@ -1539,12 +1539,12 @@ export default function App() {
   );
 
   const renderBottomNav = () => (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:T.navBg,borderTop:`1px solid ${T.border}`,display:"grid",gridTemplateColumns:"repeat(5,1fr)",padding:"10px 0 22px",backdropFilter:"blur(20px)",zIndex:100}}>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:T.forest,borderTop:"1px solid rgba(255,255,255,0.15)",display:"grid",gridTemplateColumns:"repeat(5,1fr)",padding:"10px 0 22px",backdropFilter:"blur(20px)",zIndex:100}}>
       {[{key:"tasks",ico:I.tasks,label:"Tasks"},{key:"today",ico:I.today,label:"Today"},{key:"calendar",ico:I.cal,label:"Calendar"},{key:"email",ico:I.mail,label:"Email"},{key:"news",ico:I.tasks,label:"News"}].map(n=>(
         <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
-          <Ico d={n.ico} size={20} color={view===n.key?T.forest:T.textMute}/>
-          <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",color:view===n.key?T.forest:T.textMute}}>{n.label}</span>
-          {view===n.key&&<div style={{width:4,height:4,borderRadius:"50%",background:T.forest,marginTop:1}}/>}
+          <Ico d={n.ico} size={20} color={view===n.key?"#fff":"rgba(255,255,255,0.55)"}/>
+          <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:view===n.key?700:500,letterSpacing:"0.5px",textTransform:"uppercase",color:view===n.key?"#fff":"rgba(255,255,255,0.55)"}}>{n.label}</span>
+          {view===n.key&&<div style={{width:4,height:4,borderRadius:"50%",background:"#fff",marginTop:1}}/>}
         </div>
       ))}
     </div>
@@ -1624,8 +1624,8 @@ export default function App() {
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:`1px solid ${T.borderS}`}}>
           {renderMainHeader()}
           {(view==="tasks"||view==="today")&&renderWeekStrip(true)}
-          {(view==="tasks"||view==="today")&&renderFilterPills(28)}
-          <div style={{flex:1,overflowY:"auto",padding:"0 28px 52px"}}>
+          {(view==="tasks"||view==="today")&&renderFilterPills(32)}
+          <div style={{flex:1,overflowY:"auto",padding:"0 32px 52px"}}>
             {view==="tasks"&&renderFeed(false)}
             {view==="today"&&renderFeed(true)}
             {view==="calendar"&&renderCalendar(0)}
