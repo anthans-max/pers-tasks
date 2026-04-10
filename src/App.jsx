@@ -156,6 +156,23 @@ const DEFAULT_TASKS = [
 ];
 */
 
+const YSS_FALLBACKS = [
+  { quote: "The season of failure is the best time for sowing the seeds of success.", attribution: "Paramahansa Yogananda", topic: "Perseverance" },
+  { quote: "You do not have to struggle to reach God, but you do have to struggle to tear away the self-created veil that hides him from you.", attribution: "Paramahansa Yogananda", topic: "Self-Realization" },
+  { quote: "Live quietly in the moment and see the beauty of all before you. The future will take care of itself.", attribution: "Paramahansa Yogananda", topic: "Present Moment" },
+  { quote: "The soul loves to meditate, for in contact with the spirit lies its greatest joy.", attribution: "Paramahansa Yogananda", topic: "Meditation" },
+  { quote: "Change yourself and you have done your part in changing the world.", attribution: "Paramahansa Yogananda", topic: "Inner Change" },
+  { quote: "Be a dynamo of irrepressible joy.", attribution: "Paramahansa Yogananda", topic: "Joy" },
+  { quote: "The power of unfulfilled desires is the root of all man's slavery.", attribution: "Paramahansa Yogananda", topic: "Freedom" },
+  { quote: "Persistence guarantees that results are inevitable.", attribution: "Paramahansa Yogananda", topic: "Discipline" },
+  { quote: "Remain calm, serene, always in command of yourself. You will then find out how easy it is to get along.", attribution: "Paramahansa Yogananda", topic: "Equanimity" },
+  { quote: "Do not take life's experiences too seriously. For in reality they are nothing but dream experiences.", attribution: "Paramahansa Yogananda", topic: "Perspective" },
+  { quote: "Transmute yourself from a worry expert to a peace expert. Take one step at a time.", attribution: "Paramahansa Yogananda", topic: "Peace" },
+  { quote: "The minutes are more important than the years. If you fill the minutes with thoughts of God, the years will take care of themselves.", attribution: "Paramahansa Yogananda", topic: "Time" },
+];
+
+const pickFallbackQuote = () => YSS_FALLBACKS[Math.floor(Math.random() * YSS_FALLBACKS.length)];
+
 const useIsMobile = () => {
   const [mob, setMob] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -204,7 +221,7 @@ export default function App() {
   const [showMorning, setShowMorning] = useState(true);
   const [syncing, setSyncing] = useState(null); // "news" | "email" | "calendar" | null
   const [syncToast, setSyncToast] = useState(null); // { message, isError }
-  const [yssQuote, setYssQuote] = useState({ quote: "", attribution: "", topic: "" });
+  const [yssQuote, setYssQuote] = useState(pickFallbackQuote);
   const isMobile = useIsMobile();
 
   useEffect(() => {
