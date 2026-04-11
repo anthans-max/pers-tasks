@@ -742,6 +742,10 @@ export default function App() {
         <a href="https://ledger.getlotusai.com" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
           <TabBtn active={false}>Finance</TabBtn>
         </a>
+        {/* Ops — external link */}
+        <a href="https://ops.getlotusai.com" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+          <TabBtn active={false}>Ops</TabBtn>
+        </a>
       </div>
     </div>
   );
