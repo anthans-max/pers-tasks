@@ -975,6 +975,19 @@ export default function App() {
           }}
         >Completed<span style={{fontSize:10,fontWeight:600,opacity:0.75}}>{completedCount}</span></div>
       )}
+      {view==="tasks"&&showCompleted&&completedCount>0&&(
+        <div onClick={()=>{
+          const scope=projectFilter!=="all"?`${completedCount} completed tasks in this project`:`all ${completedCount} completed tasks`;
+          if(!window.confirm(`Delete ${scope}? This cannot be undone.`)) return;
+          const toDelete=tasks.filter(t=>t.completed&&(projectFilter==="all"||t.projectId===projectFilter));
+          const ids=toDelete.map(t=>t.id);
+          setTasks(p=>p.filter(t=>!ids.includes(t.id)));
+          setShowCompleted(false);
+          supabase.from("tm_tasks").delete().in("id",ids).then(({error})=>{if(error)console.error("clearCompleted:",error.message);});
+        }}
+          style={{fontSize:11,color:"#C0392B",cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Jost',sans-serif",fontWeight:500,padding:"7px 4px",opacity:0.8}}
+        >Clear all</div>
+      )}
     </div>
   );
 
