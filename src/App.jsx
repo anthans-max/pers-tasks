@@ -214,6 +214,7 @@ export default function App() {
   const [todayEvents, setTodayEvents] = useState([]);
   const [subTasks, setSubTasks] = useState({});
   const [expandedTasks, setExpandedTasks] = useState(new Set());
+  const [showCompleted, setShowCompleted] = useState(false);
   const [addingSubTo, setAddingSubTo] = useState(null);
   const [newSubTitle, setNewSubTitle] = useState("");
   const [showProjectModal, setShowProjectModal] = useState(false);
@@ -227,7 +228,7 @@ export default function App() {
   useEffect(() => {
     Promise.all([
       supabase.from("tm_projects").select("*").eq("user_id", USER_ID),
-      supabase.from("tm_tasks").select("*").eq("user_id", USER_ID).eq("completed", false),
+      supabase.from("tm_tasks").select("*").eq("user_id", USER_ID),
       supabase.from("tm_email_tasks").select("*").eq("user_id", USER_ID),
       supabase.from("tm_news_summaries").select("*").order("story_date", { ascending: false }).limit(30),
       supabase.from("tm_sub_tasks").select("*"),
@@ -361,8 +362,14 @@ export default function App() {
     if (view==="today") t = t.filter(x => matchesDay(x, dayFilter||TODAY));
     else if (dayFilter) t = t.filter(x => matchesDay(x, dayFilter));
     if (projectFilter!=="all") t = t.filter(x => x.projectId===projectFilter);
+    if (showCompleted && view==="tasks") {
+      let done = tasks.filter(x => x.completed);
+      if (projectFilter!=="all") done = done.filter(x => x.projectId===projectFilter);
+      if (dayFilter) done = done.filter(x => matchesDay(x, dayFilter));
+      t = [...t, ...done];
+    }
     return t;
-  }, [tasks, view, dayFilter, projectFilter, TODAY]);
+  }, [tasks, view, dayFilter, projectFilter, TODAY, showCompleted]);
 
   const openCount = useMemo(() => tasks.filter(t=>!t.completed).length, [tasks]);
   const todayCount = useMemo(() => tasks.filter(t=>!t.completed&&t.dueDate===TODAY).length, [tasks, TODAY]);
@@ -464,10 +471,12 @@ export default function App() {
   const toggleDone = async (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    setTasks(p=>p.map(t=>t.id===id?{...t,completed:true}:t));
-    if(selectedTask?.id===id) setSelectedTask(null);
-    const {error} = await supabase.from("tm_tasks").update({completed:true}).eq("id",id);
+    const newVal = !task.completed;
+    setTasks(p=>p.map(t=>t.id===id?{...t,completed:newVal}:t));
+    if(selectedTask?.id===id) { if(newVal) setSelectedTask(null); else setSelectedTask({...task, completed:false}); }
+    const {error} = await supabase.from("tm_tasks").update({completed:newVal}).eq("id",id);
     if (error) { console.error("toggleDone:", error.message); return; }
+    if (!newVal) return; // un-completing — no recurring spawn
     // Spawn next instance only if recurring AND has a due date
     if (!task.recurrence || !task.dueDate) return;
     const nextDue = computeNextDate(task.dueDate, task.recurrence);
@@ -802,24 +811,25 @@ export default function App() {
     const sel = selectedTask?.id===task.id;
     const od=isOverdue(task.dueDate), td=isToday(task.dueDate), ac=isActive(task.startDate, task.dueDate);
     const isExpanded = expandedTasks.has(task.id);
+    const done = task.completed;
     return (
       <>
         <div onClick={()=>setSelectedTask(sel?null:task)}
           style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 16px",borderRadius:11,
             background:sel?"rgba(61,46,30,0.10)":T.bg2,
             border:`1px solid ${sel?T.goldB:T.borderS}`,
-            position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:isExpanded?0:4,transition:"all 0.15s"}}
+            position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:isExpanded?0:4,transition:"all 0.15s",opacity:done?0.5:1}}
           onMouseEnter={e=>{e.currentTarget.style.background="#EDE9DF";e.currentTarget.style.borderColor=T.navyDark;}}
           onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(61,46,30,0.10)":T.bg2;e.currentTarget.style.borderColor=sel?T.goldB:T.borderS;}}
         >
           <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:PC[task.priority],borderRadius:"3px 0 0 3px"}} />
           <button onClick={e=>{e.stopPropagation();toggleDone(task.id);}}
-            style={{width:19,height:19,minWidth:19,borderRadius:"50%",marginTop:2,border:`2px solid ${PC[task.priority]}`,background:"transparent",cursor:"pointer",padding:0,flexShrink:0,transition:"all 0.2s"}}
-            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-          />
+            style={{width:19,height:19,minWidth:19,borderRadius:"50%",marginTop:2,border:`2px solid ${PC[task.priority]}`,background:done?PC[task.priority]:"transparent",cursor:"pointer",padding:0,flexShrink:0,transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"center"}}
+            onMouseEnter={e=>e.currentTarget.style.background=done?PC[task.priority]:"rgba(255,255,255,0.1)"}
+            onMouseLeave={e=>e.currentTarget.style.background=done?PC[task.priority]:"transparent"}
+          >{done&&<svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}</button>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text}}>{task.title}</div>
+            <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text,textDecoration:done?"line-through":"none"}}>{task.title}</div>
             <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
               {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
               {(task.startDate||task.dueDate)&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:(td||ac)?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
@@ -837,6 +847,22 @@ export default function App() {
       </>
     );
   };
+
+  const completedCount = useMemo(() => {
+    let done = tasks.filter(x => x.completed);
+    if (projectFilter!=="all") done = done.filter(x => x.projectId===projectFilter);
+    if (dayFilter) done = done.filter(x => matchesDay(x, dayFilter));
+    return done.length;
+  }, [tasks, projectFilter, dayFilter]);
+
+  const renderCompletedToggle = () => view==="tasks" && completedCount > 0 ? (
+    <div style={{display:"flex",justifyContent:"flex-end",padding:"8px 0 4px"}}>
+      <button onClick={()=>setShowCompleted(p=>!p)}
+        style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMute,fontFamily:"'Syne',sans-serif",fontWeight:500,letterSpacing:"0.5px",padding:0}}>
+        {showCompleted?"Hide completed":"Show completed"} ({completedCount})
+      </button>
+    </div>
+  ) : null;
 
   const renderFeed = (flat=false) => {
     const isEmpty = visTasks.length===0;
@@ -882,14 +908,17 @@ export default function App() {
           <div style={{fontSize:32,marginBottom:12}}>✓</div>
           <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All clear</div>
           <div style={{fontSize:13,marginTop:4}}>No tasks in this project</div>
-        </div>):visTasks.map(t=><TaskCard key={t.id} task={t}/>)}
+        </div>):visTasks.filter(t=>!t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
+        {renderCompletedToggle()}
+        {showCompleted&&visTasks.filter(t=>t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
       </div>
     );
     return (
       <div>
         {sortedProjects.map(proj=>{
-          const projTasks=visTasks.filter(t=>t.projectId===proj.id);
-          if (!projTasks.length) return null;
+          const projTasks=visTasks.filter(t=>t.projectId===proj.id&&!t.completed);
+          if (!projTasks.length && !(showCompleted && visTasks.some(t=>t.projectId===proj.id&&t.completed))) return null;
+          const doneTasks=showCompleted?visTasks.filter(t=>t.projectId===proj.id&&t.completed):[];
           return (
             <div key={proj.id}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 0 6px"}}>
@@ -897,12 +926,14 @@ export default function App() {
                   <div style={{width:7,height:7,borderRadius:"50%",background:proj.color||T.gold}}/>
                   <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"1.8px",textTransform:"uppercase",color:T.textMute}}>{proj.name}</span>
                 </div>
-                <span style={{fontSize:11,color:T.textMute,background:"rgba(255,255,255,0.05)",padding:"1px 8px",borderRadius:8}}>{projTasks.length}</span>
+                <span style={{fontSize:11,color:T.textMute,background:"rgba(255,255,255,0.05)",padding:"1px 8px",borderRadius:8}}>{projTasks.length+doneTasks.length}</span>
               </div>
               {projTasks.map(t=><TaskCard key={t.id} task={t}/>)}
+              {doneTasks.map(t=><TaskCard key={t.id} task={t}/>)}
             </div>
           );
         })}
+        {renderCompletedToggle()}
       </div>
     );
   };
@@ -1293,7 +1324,7 @@ export default function App() {
                 </button>
               )}
             </div>
-            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
+            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:selectedTask.completed?"#C0392B":T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>{selectedTask.completed?"↩ Mark Incomplete":"✓ Mark Complete"}</button>
           </div>
         </div>
       )}
@@ -1483,7 +1514,7 @@ export default function App() {
           </div>
         </div>
         <div style={{padding:"14px 20px 50px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
-          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>✓ Mark Complete</button>
+          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:task.completed?"#C0392B":T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>{task.completed?"↩ Mark Incomplete":"✓ Mark Complete"}</button>
         </div>
       </div>
     );
