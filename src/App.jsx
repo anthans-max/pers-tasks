@@ -855,15 +855,6 @@ export default function App() {
     return done.length;
   }, [tasks, projectFilter, dayFilter]);
 
-  const renderCompletedToggle = () => view==="tasks" && completedCount > 0 ? (
-    <div style={{display:"flex",justifyContent:"flex-end",padding:"8px 0 4px"}}>
-      <button onClick={()=>setShowCompleted(p=>!p)}
-        style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMute,fontFamily:"'Syne',sans-serif",fontWeight:500,letterSpacing:"0.5px",padding:0}}>
-        {showCompleted?"Hide completed":"Show completed"} ({completedCount})
-      </button>
-    </div>
-  ) : null;
-
   const renderFeed = (flat=false) => {
     const isEmpty = visTasks.length===0;
     const showTodayEvents = view==="today" && todayEvents.length > 0;
@@ -909,7 +900,6 @@ export default function App() {
           <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All clear</div>
           <div style={{fontSize:13,marginTop:4}}>No tasks in this project</div>
         </div>):visTasks.filter(t=>!t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
-        {renderCompletedToggle()}
         {showCompleted&&visTasks.filter(t=>t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
       </div>
     );
@@ -933,7 +923,6 @@ export default function App() {
             </div>
           );
         })}
-        {renderCompletedToggle()}
       </div>
     );
   };
@@ -977,6 +966,15 @@ export default function App() {
           }}
         >{f.name}</div>
       ))}
+      {view==="tasks"&&completedCount>0&&(
+        <div onClick={()=>setShowCompleted(p=>!p)}
+          style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:showCompleted?600:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
+            background:showCompleted?T.forest:"transparent",
+            border:`1px solid ${showCompleted?T.forest:"rgba(45,74,53,0.4)"}`,
+            color:showCompleted?T.bg:T.forestMid,display:"flex",alignItems:"center",gap:6,
+          }}
+        >Completed<span style={{fontSize:10,fontWeight:600,opacity:0.75}}>{completedCount}</span></div>
+      )}
     </div>
   );
 
@@ -1432,7 +1430,6 @@ export default function App() {
         <div style={{padding:"18px 20px 14px",borderBottom:`1px solid ${T.borderS}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.15em"}}>Task Detail</div>
           <div style={{display:"flex",gap:6}}>
-            <button onClick={()=>deleteTask(task.id)} style={{background:T.red,border:"none",cursor:"pointer",padding:6,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}><Ico d={I.trash} size={15} color="#fff"/></button>
             <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={15} color={T.textMute}/></button>
           </div>
         </div>
