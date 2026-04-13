@@ -1088,7 +1088,7 @@ export default function App() {
               Assign
             </button>
             <button onClick={batchDismiss}
-              style={{padding:"7px 12px",background:T.surface,border:`1px solid ${T.borderS}`,color:T.textMute,borderRadius:6,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"}}>
+              style={{padding:"7px 16px",background:"#C0392B",border:"none",color:"#fff",borderRadius:100,cursor:"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",whiteSpace:"nowrap",fontFamily:"'Jost', sans-serif"}}>
               Dismiss
             </button>
           </div>
@@ -1229,7 +1229,6 @@ export default function App() {
                 <span style={{width:6,height:6,borderRadius:"50%",background:"currentColor",display:"inline-block"}}/>{PL[selectedTask.priority]}
               </div>
               <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>deleteTask(selectedTask.id)} style={{background:T.red,border:"none",cursor:"pointer",padding:6,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center"}}><Ico d={I.trash} size={16} color="#fff"/></button>
                 <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={16} color={T.textMute}/></button>
               </div>
             </div>
