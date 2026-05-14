@@ -1034,7 +1034,7 @@ export default function App() {
           </div>
         )}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,marginBottom:2}}>
-          {DAYS.map(d=><div key={d} style={{padding:"6px 0",fontSize:10,fontWeight:700,color:T.textMute,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>{d}</div>)}
+          {DAYS.map(d=><div key={d} style={{padding:"6px 0",fontSize:13,fontWeight:700,color:T.textMute,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>{d}</div>)}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
           {cells.map((day,i)=>{
@@ -1044,22 +1044,22 @@ export default function App() {
             const dt=dtRaw.filter((ev,idx,self)=>idx===self.findIndex(e=>e.title===ev.title&&e.dueDate===ev.dueDate));
             const maxShow=padH>0?3:2;
             return (
-              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${isT?T.goldB:day?T.borderS:"transparent"}`,borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden",cursor:day?"pointer":"default"}}
+              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${day?T.borderS:"transparent"}`,...(isT?{borderTop:`2px solid ${T.forest}`}:{}),borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden",cursor:day?"pointer":"default"}}
                 onClick={()=>{if(!day)return;const dd=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;setDayFilter(dd);setView("today");}}>
                 {day&&<>
-                  <div style={{fontSize:12,fontWeight:isT?800:600,color:isT?T.gold:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
-                    {isT&&<span style={{width:5,height:5,borderRadius:"50%",background:T.gold,display:"inline-block"}}/>}{day}
+                  <div style={{fontSize:15,fontWeight:isT?800:600,color:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
+                    {isT?<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background:T.forest,color:"#F4F1EC",fontSize:15,fontWeight:700,lineHeight:1}}>{day}</span>:day}
                   </div>
                   {dt.slice(0,maxShow).map((t,ti)=>{
                     const p=t._gcal?gcalPill(t):t._calEvent?calEventPill(t):{bg:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",c:t._email?T.email:PC[t.priority]||T.textMute,b:t._email?T.email:PC[t.priority]||T.textMute};
                     const proj=t._projected;
                     return (
                       <div key={ti} title={t.title+(proj?' (projected)':'')} onClick={(e)=>{if(proj){e.stopPropagation();return;}if(!t._gcal&&t.sectionId)setSelectedTask(t);}}
-                        style={{fontSize:10,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,opacity:proj?0.5:1,borderLeftStyle:proj?'dashed':'solid',cursor:!t._gcal&&!proj&&t.sectionId?"pointer":"default"}}
+                        style={{fontSize:12,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,opacity:proj?0.5:1,borderLeftStyle:proj?'dashed':'solid',cursor:!t._gcal&&!proj&&t.sectionId?"pointer":"default"}}
                       >{proj?'↻ ':''}{t.title}</div>
                     );
                   })}
-                  {dt.length>maxShow&&<div style={{fontSize:9,color:T.textMute,padding:"1px 5px"}}>+{dt.length-maxShow} more</div>}
+                  {dt.length>maxShow&&<div style={{fontSize:11,color:T.textMute,padding:"1px 5px"}}>+{dt.length-maxShow} more</div>}
                 </>}
               </div>
             );
