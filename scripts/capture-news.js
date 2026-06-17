@@ -112,7 +112,7 @@ async function extractStories(sourceName, emailBody) {
   const truncated = emailBody.length > 30000 ? emailBody.slice(0, 30000) : emailBody;
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 1024,
     messages: [
       {
