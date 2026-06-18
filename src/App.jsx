@@ -326,12 +326,12 @@ export default function App() {
     setNewDate(addDaysStr(3));
   }, [isQuickAdd]);
 
-  // Default the quick-add project to "General" once projects load.
+  // Default the new-task project to "General" once projects load
+  // (both the standalone /quick-add page and the inline tasks quick-add bar).
   useEffect(() => {
-    if (!isQuickAdd) return;
     const gen = projects.find(p => p.name === "General");
     if (gen) setNewProject(gen.id);
-  }, [isQuickAdd, projects]);
+  }, [projects]);
 
   useEffect(() => {
     if (!showMorning) return;
@@ -768,34 +768,34 @@ export default function App() {
   const SubTaskList = ({taskId}) => {
     const subs = subTasks[taskId] || [];
     return (
-      <div style={{marginLeft:40,marginRight:16,marginBottom:4}}>
+      <div style={{marginLeft:42,marginRight:20,marginBottom:8,fontFamily:"'DM Mono', monospace"}}>
         {subs.map(sub => (
-          <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderS}`}}>
+          <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid var(--hair)"}}>
             <button onClick={()=>toggleSubTask(taskId,sub.id)}
-              style={{width:14,height:14,minWidth:14,borderRadius:3,border:`1.5px solid ${sub.isComplete?T.forest:T.forestMid}`,
-                background:sub.isComplete?T.forest:"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              {sub.isComplete&&<svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke={T.bg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+              style={{width:16,height:16,minWidth:16,borderRadius:"50%",border:`1.5px solid ${sub.isComplete?"var(--accent)":"var(--muted)"}`,
+                background:sub.isComplete?"var(--accent)":"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {sub.isComplete&&<svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#0c0e0b" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
             </button>
-            <span style={{flex:1,fontSize:12.5,color:sub.isComplete?T.textMute:T.text,textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
+            <span style={{flex:1,fontSize:13,color:sub.isComplete?"var(--muted)":"var(--ink)",textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
             <button onClick={()=>deleteSubTask(taskId,sub.id)}
               className="subtask-del"
               style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0,transition:"opacity 0.15s"}}>
-              <Ico d={I.x} size={11} color={T.red}/>
+              <Ico d={I.x} size={12} color="#c25c44"/>
             </button>
           </div>
         ))}
         {addingSubTo===taskId ? (
-          <div style={{display:"flex",gap:6,alignItems:"center",padding:"6px 0"}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",padding:"8px 0"}}>
             <input autoFocus value={newSubTitle} onChange={e=>setNewSubTitle(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter")addSubTask(taskId,newSubTitle);if(e.key==="Escape"){setAddingSubTo(null);setNewSubTitle("");}}}
               placeholder="Sub-task title…"
-              style={{flex:1,fontSize:12,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,outline:"none",fontFamily:"'Jost',sans-serif"}}/>
+              style={{flex:1,fontSize:13,padding:"7px 10px",borderRadius:0,border:"1px solid var(--hair2)",background:"var(--card)",color:"var(--ink)",outline:"none",fontFamily:"'DM Mono', monospace"}}/>
             <button onClick={()=>addSubTask(taskId,newSubTitle)}
-              style={{fontSize:11,fontWeight:600,color:T.forest,background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>Add</button>
+              style={{fontSize:11,fontWeight:700,color:"var(--accent)",background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne', sans-serif",textTransform:"uppercase",letterSpacing:"0.06em"}}>Add</button>
           </div>
         ) : (
           <button onClick={(e)=>{e.stopPropagation();setAddingSubTo(taskId);setNewSubTitle("");}}
-            style={{fontSize:11,color:T.gold,background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+            style={{fontSize:11,color:"var(--accent)",background:"none",border:"none",cursor:"pointer",padding:"8px 0",fontFamily:"'DM Mono', monospace",letterSpacing:"0.04em"}}>
             + Add sub-task
           </button>
         )}
@@ -805,38 +805,43 @@ export default function App() {
 
   const TaskCard = ({task}) => {
     const sel = selectedTask?.id===task.id;
-    const od=isOverdue(task.dueDate), td=isToday(task.dueDate), ac=isActive(task.startDate, task.dueDate);
+    const od=isOverdue(task.dueDate);
     const isExpanded = expandedTasks.has(task.id);
     const done = task.completed;
+    const hiPri = !done && task.priority<=2;
+    const hasMeta = !done && (task.startDate||task.dueDate||task.recurrence||task.subtasks>0||task.fromEmail);
     return (
       <>
         <div onClick={()=>setSelectedTask(sel?null:task)}
-          style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 16px",borderRadius:11,
-            background:sel?"rgba(61,46,30,0.10)":T.bg2,
-            border:`1px solid ${sel?T.goldB:T.borderS}`,
-            position:"relative",overflow:"hidden",cursor:"pointer",marginBottom:isExpanded?0:4,transition:"all 0.15s",opacity:done?0.5:1}}
-          onMouseEnter={e=>{e.currentTarget.style.background="#EDE9DF";e.currentTarget.style.borderColor=T.navyDark;}}
-          onMouseLeave={e=>{e.currentTarget.style.background=sel?"rgba(61,46,30,0.10)":T.bg2;e.currentTarget.style.borderColor=sel?T.goldB:T.borderS;}}
+          style={{display:"flex",alignItems:"flex-start",gap:16,padding:"17px 20px",borderRadius:0,
+            background:"var(--card)",
+            border:`1px solid ${sel?"var(--hair2)":"var(--hair)"}`,
+            boxShadow:sel?"0 4px 16px rgba(0,0,0,0.10)":"none",
+            cursor:"pointer",marginBottom:isExpanded?0:8,transition:"box-shadow 0.2s, border-color 0.2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.10)";e.currentTarget.style.borderColor="var(--hair2)";}}
+          onMouseLeave={e=>{e.currentTarget.style.boxShadow=sel?"0 4px 16px rgba(0,0,0,0.10)":"none";e.currentTarget.style.borderColor=sel?"var(--hair2)":"var(--hair)";}}
         >
-          <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:PC[task.priority],borderRadius:"3px 0 0 3px"}} />
           <button onClick={e=>{e.stopPropagation();toggleDone(task.id);}}
-            style={{width:19,height:19,minWidth:19,borderRadius:"50%",marginTop:2,border:`2px solid ${PC[task.priority]}`,background:done?PC[task.priority]:"transparent",cursor:"pointer",padding:0,flexShrink:0,transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"center"}}
-            onMouseEnter={e=>e.currentTarget.style.background=done?PC[task.priority]:"rgba(255,255,255,0.1)"}
-            onMouseLeave={e=>e.currentTarget.style.background=done?PC[task.priority]:"transparent"}
-          >{done&&<svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}</button>
+            style={{width:26,height:26,minWidth:26,borderRadius:"50%",marginTop:1,flexShrink:0,cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",
+              border:done?"1.5px solid var(--accent)":hiPri?"2px solid #b04a34":"1.5px solid var(--muted)",
+              background:done?"var(--accent)":"transparent"}}
+            onMouseEnter={e=>{if(done)return;e.currentTarget.style.background=hiPri?"rgba(176,74,52,0.12)":"transparent";if(!hiPri)e.currentTarget.style.borderColor="var(--accent)";}}
+            onMouseLeave={e=>{if(done)return;e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor=hiPri?"#b04a34":"var(--muted)";}}
+          >{done&&<svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#0c0e0b" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}</button>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:13.5,fontWeight:500,lineHeight:1.4,color:T.text,textDecoration:done?"line-through":"none"}}>{task.title}</div>
-            <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
-              {task.fromEmail&&<span style={{fontSize:10,background:T.emailS,color:T.email,padding:"2px 7px",borderRadius:6,fontWeight:700}}>email</span>}
-              {(task.startDate||task.dueDate)&&<span style={{fontSize:11,fontWeight:600,color:od?T.red:(td||ac)?T.forestMid:T.textMute,display:"flex",alignItems:"center",gap:3}}>
-                📅 {task.startDate?fmtDateRange(task.startDate,task.dueDate):fmtDate(task.dueDate)}{task.recurrence&&<><Ico d={I.recur} size={10} color={T.textMute} style={{marginLeft:2}}/><span style={{fontSize:9,color:T.textMute,fontWeight:600,marginLeft:1}}>{RL[task.recurrence]}</span></>}
+            <div style={{fontSize:16,lineHeight:1.45,color:done?"var(--muted)":"var(--ink)",textDecoration:done?"line-through":"none"}}>{task.title}</div>
+            {hasMeta&&<div style={{display:"flex",gap:14,marginTop:7,alignItems:"center",flexWrap:"wrap",fontSize:12.5}}>
+              {(task.startDate||task.dueDate)&&<span style={{color:od?"#c25c44":"var(--muted)"}}>
+                {task.startDate?fmtDateRange(task.startDate,task.dueDate):fmtDate(task.dueDate)}
               </span>}
+              {task.recurrence&&<span style={{color:"var(--accent)"}}>↻ {RL[task.recurrence]}</span>}
               {task.subtasks>0&&<span onClick={e=>{e.stopPropagation();setExpandedTasks(p=>{const n=new Set(p);n.has(task.id)?n.delete(task.id):n.add(task.id);return n;});}}
-                style={{fontSize:11,color:T.textMute,display:"flex",alignItems:"center",gap:3,cursor:"pointer"}}>
+                style={{color:"var(--muted)",display:"flex",alignItems:"center",gap:3,cursor:"pointer"}}>
                 {task.subtasksDone}/{task.subtasks}
-                <Ico d={I.chevD} size={10} color={T.textMute} style={{transform:isExpanded?"rotate(180deg)":"none",transition:"transform 0.15s"}}/>
+                <Ico d={I.chevD} size={11} color="var(--muted)" style={{transform:isExpanded?"rotate(180deg)":"none",transition:"transform 0.15s"}}/>
               </span>}
-            </div>
+              {task.fromEmail&&<span style={{color:"var(--muted)"}}>✉</span>}
+            </div>}
           </div>
         </div>
         {isExpanded&&<SubTaskList taskId={task.id}/>}
@@ -854,122 +859,103 @@ export default function App() {
   const renderFeed = (flat=false) => {
     const isEmpty = visTasks.length===0;
     const showTodayEvents = view==="today" && todayEvents.length > 0;
-    if (flat||view==="today"||dayFilter) return (
-      <div style={{padding:"0 0 8px"}}>
-        {showTodayEvents && (
-          <div style={{marginBottom:visTasks.length?16:0}}>
-            <div style={{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:1,color:T.textMute,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>Calendar</div>
-            {todayEvents.map((ev,i) => {
-              const isAllDay = ev.allDay || ev.event_type==="all_day";
-              const timeStr = isAllDay ? "All day" : (ev.start_time || (ev.date && ev.date.length > 10 ? ev.date.slice(11,16) : ""));
-              const isShared = ev.calendarSource==="shared" || ev.calendar_source==="shared";
-              const lower = (ev.title||"").toLowerCase();
-              const isBday = lower.includes("birthday")||lower.includes("bday")||lower.includes("anniversary");
-              const accent = isBday ? "#8A6310" : isShared ? "#4A3F80" : "#2A5E54";
-              const bg = isBday ? "rgba(181,135,26,0.10)" : isShared ? "rgba(123,111,170,0.10)" : "rgba(74,124,111,0.10)";
-              return (
-                <div key={ev.id||ev.gcal_event_id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:6,borderRadius:10,background:bg,borderLeft:`3px solid ${accent}`}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:14,fontWeight:500,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
-                    {ev.location && <div style={{fontSize:11,color:T.textMute,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.location}</div>}
-                  </div>
-                  {timeStr && <div style={{fontSize:12,color:accent,fontWeight:500,whiteSpace:"nowrap",fontFamily:"'Syne',sans-serif"}}>{timeStr}</div>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {visTasks.length > 0 && showTodayEvents && (
-          <div style={{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:1,color:T.textMute,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>Tasks</div>
-        )}
-        {isEmpty && !showTodayEvents?(<div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
-          <div style={{fontSize:32,marginBottom:12}}>✓</div>
-          <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All clear</div>
-          <div style={{fontSize:13,marginTop:4}}>No tasks {view==="today"?"due today":"for this day"}</div>
-        </div>):visTasks.map(t=><TaskCard key={t.id} task={t}/>)}
+    const groupLabel = {fontFamily:"'DM Mono', monospace",fontSize:11,letterSpacing:"0.16em",textTransform:"uppercase",color:"var(--muted2)"};
+    const emptyState = <div style={{padding:"80px 0",textAlign:"center",fontFamily:"'DM Mono', monospace",fontSize:14,color:"var(--muted2)"}}>Nothing here — you're all caught up. ❋</div>;
+    const quickAddBar = (
+      <div style={{display:"flex",alignItems:"center",gap:14,height:58,background:"var(--card)",border:"1px solid var(--hair2)",borderRadius:0,padding:"0 18px",margin:"12px 0 16px"}}>
+        <div style={{width:30,height:30,minWidth:30,borderRadius:"50%",background:"var(--accent)",color:"#0c0e0b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>＋</div>
+        <input id="ls-qa-input" value={newTitle} onChange={e=>setNewTitle(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"&&newTitle.trim())addTask();}}
+          placeholder="Add a task to General…   press Enter to save"
+          style={{flex:1,minWidth:0,border:"none",outline:"none",background:"transparent",fontFamily:"'DM Mono', monospace",fontSize:isMobile?16:15,color:"var(--ink)"}}/>
       </div>
     );
-    if (projectFilter !== "all") return (
-      <div style={{padding:"0 0 8px"}}>
-        {isEmpty?(<div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
-          <div style={{fontSize:32,marginBottom:12}}>✓</div>
-          <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All clear</div>
-          <div style={{fontSize:13,marginTop:4}}>No tasks in this project</div>
-        </div>):visTasks.filter(t=>!t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
+    const wrap = (children) => <div style={{maxWidth:920,margin:"0 auto",paddingBottom:8}}>{view==="tasks"&&quickAddBar}{children}</div>;
+
+    if (flat||view==="today"||dayFilter) return wrap(<>
+      {showTodayEvents && (
+        <div style={{marginBottom:visTasks.length?16:0}}>
+          <div style={{...groupLabel,marginBottom:8}}>Calendar</div>
+          {todayEvents.map((ev,i) => {
+            const isAllDay = ev.allDay || ev.event_type==="all_day";
+            const timeStr = isAllDay ? "All day" : (ev.start_time || (ev.date && ev.date.length > 10 ? ev.date.slice(11,16) : ""));
+            const isShared = ev.calendarSource==="shared" || ev.calendar_source==="shared";
+            const lower = (ev.title||"").toLowerCase();
+            const isBday = lower.includes("birthday")||lower.includes("bday")||lower.includes("anniversary");
+            const accent = isBday ? "#8A6310" : isShared ? "#4A3F80" : "#2A5E54";
+            const bg = isBday ? "rgba(181,135,26,0.10)" : isShared ? "rgba(123,111,170,0.10)" : "rgba(74,124,111,0.10)";
+            return (
+              <div key={ev.id||ev.gcal_event_id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",marginBottom:8,borderRadius:0,background:bg,borderLeft:`3px solid ${accent}`}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:"'DM Mono', monospace",fontSize:14,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</div>
+                  {ev.location && <div style={{fontSize:11,color:"var(--muted)",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.location}</div>}
+                </div>
+                {timeStr && <div style={{fontFamily:"'DM Mono', monospace",fontSize:12,color:accent,whiteSpace:"nowrap"}}>{timeStr}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {visTasks.length > 0 && showTodayEvents && (
+        <div style={{...groupLabel,margin:"24px 0 10px"}}>Tasks</div>
+      )}
+      {isEmpty && !showTodayEvents ? emptyState : <div style={{display:"flex",flexDirection:"column",gap:8}}>{visTasks.map(t=><TaskCard key={t.id} task={t}/>)}</div>}
+    </>);
+
+    if (projectFilter !== "all") return wrap(
+      isEmpty ? emptyState : <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {visTasks.filter(t=>!t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
         {showCompleted&&visTasks.filter(t=>t.completed).map(t=><TaskCard key={t.id} task={t}/>)}
       </div>
     );
-    return (
-      <div>
-        {sortedProjects.map(proj=>{
-          const projTasks=visTasks.filter(t=>t.projectId===proj.id&&!t.completed);
-          if (!projTasks.length && !(showCompleted && visTasks.some(t=>t.projectId===proj.id&&t.completed))) return null;
-          const doneTasks=showCompleted?visTasks.filter(t=>t.projectId===proj.id&&t.completed):[];
-          return (
-            <div key={proj.id}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 0 6px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <div style={{width:7,height:7,borderRadius:"50%",background:proj.color||T.gold}}/>
-                  <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"1.8px",textTransform:"uppercase",color:T.textMute}}>{proj.name}</span>
-                </div>
-                <span style={{fontSize:11,color:T.textMute,background:"rgba(255,255,255,0.05)",padding:"1px 8px",borderRadius:8}}>{projTasks.length+doneTasks.length}</span>
-              </div>
+
+    const anyGroup = sortedProjects.some(proj=>visTasks.some(t=>t.projectId===proj.id&&(!t.completed||showCompleted)));
+    return wrap(
+      !anyGroup ? emptyState : sortedProjects.map(proj=>{
+        const projTasks=visTasks.filter(t=>t.projectId===proj.id&&!t.completed);
+        if (!projTasks.length && !(showCompleted && visTasks.some(t=>t.projectId===proj.id&&t.completed))) return null;
+        const doneTasks=showCompleted?visTasks.filter(t=>t.projectId===proj.id&&t.completed):[];
+        return (
+          <div key={proj.id}>
+            <div style={{display:"flex",alignItems:"center",gap:10,margin:"24px 0 10px"}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:PROJECT_COLORS[proj.name]||proj.color||"#c4902a",flexShrink:0}}/>
+              <span style={groupLabel}>{proj.name}</span>
+              <div style={{flex:1,height:1,background:"var(--hair)"}}/>
+              <span style={{fontFamily:"'DM Mono', monospace",fontSize:12,color:"var(--muted2)"}}>{projTasks.length+doneTasks.length}</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {projTasks.map(t=><TaskCard key={t.id} task={t}/>)}
               {doneTasks.map(t=><TaskCard key={t.id} task={t}/>)}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })
     );
   };
 
-  const renderWeekStrip = (compact=false, padH=compact?32:16) => (
-    <div style={{display:"flex",gap:compact?4:2,overflowX:"auto",padding:`12px ${padH}px`,borderBottom:`1px solid ${T.borderS}`,scrollbarWidth:"none",flexShrink:0,alignItems:"center"}}>
-      {weekDays.map(d=>(
-        <div key={d.date} onClick={()=>{setDayFilter(dayFilter===d.date?null:d.date);if(view!=="tasks"&&view!=="today")setView("tasks");}}
-          style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,minWidth:compact?56:46,padding:compact?"8px 12px":"8px 6px",borderRadius:10,cursor:"pointer",transition:"all 0.15s",
-            background:dayFilter===d.date?T.forestPale:"transparent",
-            border:`1px solid ${dayFilter===d.date?"rgba(45,74,53,0.3)":"transparent"}`,
-          }}
-        >
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:500,textTransform:"uppercase",letterSpacing:"0.6px",color:(dayFilter===d.date||d.isToday)?T.forest:T.textMute}}>{d.name}</div>
-          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:(dayFilter===d.date||d.isToday)?T.gold:T.textMute}}>{d.num}</div>
-          {d.hasTasks?<div style={{width:4,height:4,borderRadius:"50%",background:T.gold}}/>:<div style={{width:4,height:4}}/>}
-        </div>
-      ))}
-      {compact&&<>
-        <div style={{flex:1}}/>
-        <div style={{display:"flex",gap:20,alignItems:"center",padding:"0 4px"}}>
-          {[{n:todayCount,l:"Today",c:T.gold},{n:openCount,l:"Open",c:T.textSoft},{n:emailTasks.length,l:"Emails",c:T.email}].map(({n,l,c},i)=>(
-            <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:c,fontWeight:600,lineHeight:1}}>{n}</div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontSize:9,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.8px",marginTop:2}}>{l}</div>
-            </div>
-          ))}
-        </div>
-      </>}
-    </div>
-  );
-
-  const renderFilterPills = (padH=16) => (
-    <div style={{display:"flex",gap:6,padding:`12px ${padH}px 0`,overflowX:"auto",scrollbarWidth:"none",flexShrink:0}}>
-      {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>(
-        <div key={f.id} onClick={()=>setProjectFilter(f.id)}
-          style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:projectFilter===f.id?600:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
-            background:projectFilter===f.id?T.forest:"transparent",
-            border:`1px solid ${projectFilter===f.id?T.forest:"rgba(45,74,53,0.4)"}`,
-            color:projectFilter===f.id?T.bg:T.forestMid,
-          }}
-        >{f.name}</div>
-      ))}
+  const renderFilterPills = (padH=44) => {
+    const h = isMobile?42:44;
+    const chip = (active) => ({
+      height:h,display:"flex",alignItems:"center",gap:8,padding:"0 22px",borderRadius:999,whiteSpace:"nowrap",cursor:"pointer",
+      fontFamily:"'DM Mono', monospace",fontSize:12.5,textTransform:"uppercase",letterSpacing:"0.05em",transition:"all 0.15s",
+      background:active?"var(--pill)":"transparent",
+      border:`1px solid ${active?"var(--pill)":"var(--hair2)"}`,
+      color:active?"var(--pillfg)":"var(--ink)",
+    });
+    const hoverIn = (active)=>(e)=>{if(!active){e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.color="var(--accent)";}};
+    const hoverOut = (active)=>(e)=>{if(!active){e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--ink)";}};
+    return (
+    <div style={{display:"flex",gap:10,padding:isMobile?"14px 16px":`18px ${padH}px`,flexWrap:isMobile?"nowrap":"wrap",overflowX:isMobile?"auto":"visible",scrollbarWidth:"none",flexShrink:0}}>
+      {[{id:"all",name:"All"},...sortedProjects.map(p=>({id:p.id,name:p.name}))].map(f=>{
+        const active=projectFilter===f.id;
+        return (
+          <div key={f.id} onClick={()=>setProjectFilter(f.id)} style={chip(active)} onMouseEnter={hoverIn(active)} onMouseLeave={hoverOut(active)}>{f.name}</div>
+        );
+      })}
       {view==="tasks"&&completedCount>0&&(
-        <div onClick={()=>setShowCompleted(p=>!p)}
-          style={{padding:"7px 18px",borderRadius:100,fontSize:12,fontWeight:showCompleted?600:500,whiteSpace:"nowrap",cursor:"pointer",transition:"all 0.15s",fontFamily:"'Jost',sans-serif",
-            background:showCompleted?T.forest:"transparent",
-            border:`1px solid ${showCompleted?T.forest:"rgba(45,74,53,0.4)"}`,
-            color:showCompleted?T.bg:T.forestMid,display:"flex",alignItems:"center",gap:6,
-          }}
-        >Completed<span style={{fontSize:10,fontWeight:600,opacity:0.75}}>{completedCount}</span></div>
+        <div onClick={()=>setShowCompleted(p=>!p)} style={chip(showCompleted)} onMouseEnter={hoverIn(showCompleted)} onMouseLeave={hoverOut(showCompleted)}>
+          Completed<span style={{opacity:0.55}}>{completedCount}</span>
+        </div>
       )}
       {view==="tasks"&&showCompleted&&completedCount>0&&(
         <div onClick={()=>{
@@ -981,11 +967,12 @@ export default function App() {
           setShowCompleted(false);
           supabase.from("tm_tasks").delete().in("id",ids).then(({error})=>{if(error)console.error("clearCompleted:",error.message);});
         }}
-          style={{fontSize:11,color:"#C0392B",cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Jost',sans-serif",fontWeight:500,padding:"7px 4px",opacity:0.8}}
+          style={{display:"flex",alignItems:"center",height:h,fontFamily:"'DM Mono', monospace",fontSize:11,color:"#c25c44",cursor:"pointer",whiteSpace:"nowrap",letterSpacing:"0.04em",textTransform:"uppercase"}}
         >Clear all</div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderCalendar = (padH=16) => {
     const {daysInMonth,startPad,byDate}=calData, {year,month}=calMonth;
@@ -1524,6 +1511,32 @@ export default function App() {
   };
 
   // ── Desktop Main Header ──────────────────────────────────────
+  // Desktop content header for the Tasks/Today views (title + date eyebrow + stats).
+  const renderTasksHeader = () => {
+    const dateStr = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase();
+    const stats = [
+      {n:todayCount, l:"TODAY", c:"var(--title)"},
+      {n:openCount,  l:"OPEN",  c:"var(--accent)"},
+      {n:emailTasks.length, l:"EMAILS", c:"var(--title)"},
+    ];
+    return (
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",padding:"30px 44px 18px",borderBottom:"1px solid var(--hair)",flexShrink:0}}>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:300,fontSize:46,lineHeight:1,color:"var(--title)"}}>{view==="today"?"Today":"All Tasks"}</div>
+          <div style={{fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.12em",color:"var(--muted)",marginTop:8}}>{dateStr}</div>
+        </div>
+        <div style={{display:"flex",gap:32,alignItems:"flex-end"}}>
+          {stats.map(s=>(
+            <div key={s.l} style={{textAlign:"center"}}>
+              <div style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:300,fontSize:36,lineHeight:1,color:s.c}}>{s.n}</div>
+              <div style={{fontFamily:"'DM Mono', monospace",fontSize:10,textTransform:"uppercase",letterSpacing:"0.12em",color:"var(--muted)",marginTop:5}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderMainHeader = () => {
     const titles={tasks:"All Tasks",today:"Today",calendar:"Calendar",email:"Email Capture",news:"News"};
     return (
@@ -1578,18 +1591,6 @@ export default function App() {
       </div>
     );
   };
-
-  const renderSummaryCard = () => (
-    <div style={{margin:"14px 16px 0",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.border}`,borderRadius:14,padding:16,display:"flex",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,${T.gold},transparent)`}}/>
-      {[{n:todayCount,l:"Due Today",c:T.gold},{n:openCount,l:"Open",c:T.textSoft},{n:emailTasks.length,l:"Emails",c:T.email}].map(({n,l,c},i,arr)=>(
-        <div key={l} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${T.goldB}`:"none"}}>
-          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,color:c,fontWeight:600,lineHeight:1}}>{n}</div>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.8px",marginTop:4,fontWeight:500}}>{l}</div>
-        </div>
-      ))}
-    </div>
-  );
 
   const renderBottomNav = () => {
     const tabs = [
@@ -1793,10 +1794,9 @@ export default function App() {
     <div style={{...getThemeVars(theme),...base,fontFamily:"'DM Mono', monospace",background:'var(--canvas)',display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden"}}>
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {renderSidebar()}
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:`1px solid ${T.borderS}`}}>
-          {renderMainHeader()}
-          {(view==="tasks"||view==="today")&&renderWeekStrip(true)}
-          {(view==="tasks"||view==="today")&&renderFilterPills(32)}
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:"1px solid var(--hair)"}}>
+          {(view==="tasks"||view==="today") ? renderTasksHeader() : renderMainHeader()}
+          {(view==="tasks"||view==="today")&&renderFilterPills(44)}
           <div style={{flex:1,overflowY:"auto",padding:"0 32px 52px"}}>
             {view==="tasks"&&renderFeed(false)}
             {view==="today"&&renderFeed(true)}
@@ -1816,9 +1816,7 @@ export default function App() {
   return (
     <div style={{...getThemeVars(theme),...base,fontFamily:"'DM Mono', monospace",background:'var(--canvas)',maxWidth:430,margin:"0 auto",height:"100dvh",overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start"}}>
       {renderTopBar()}
-      {(view==="tasks"||view==="today")&&renderWeekStrip(false)}
       <div style={{flex:1,overflowY:"auto",paddingBottom:100}}>
-        {(view==="tasks"||view==="today")&&renderSummaryCard()}
         {(view==="tasks"||view==="today")&&renderFilterPills(16)}
         {view==="tasks"&&<div style={{padding:"0 16px"}}>{renderFeed(false)}</div>}
         {view==="today"&&<div style={{padding:"0 16px"}}>{renderFeed(true)}</div>}
