@@ -1745,7 +1745,6 @@ export default function App() {
 
         {/* Greeting */}
         <div style={{fontFamily:"'Syne',sans-serif",fontSize:isMobile?13:"0.6rem",fontWeight:500,letterSpacing:"0.22em",textTransform:"uppercase",color:T.textMute,marginBottom:8}}>Good Morning</div>
-        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?52:"2rem",fontWeight:600,color:T.text,marginBottom:6}}>Welcome back, Anthan</div>
         <div style={{fontSize:isMobile?16:"0.82rem",color:T.textMute,marginBottom:40}}>{dateStr}  ·  Los Angeles</div>
 
         {/* YSS Quote */}
@@ -1754,7 +1753,7 @@ export default function App() {
             {yssQuote.topic && (
               <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.2em",textTransform:"uppercase",color:"#B5703A",border:"1px solid #B5703A",borderRadius:20,padding:"3px 14px",display:"inline-block",marginBottom:"0.75rem"}}>{yssQuote.topic}</div>
             )}
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?20:"1.2rem",fontStyle:"italic",lineHeight:isMobile?1.6:1.7,color:T.text,marginBottom:14}}>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?24:"1.45rem",fontStyle:"italic",lineHeight:1.65,color:T.text,marginBottom:14}}>
               "{yssQuote.quote}"
             </div>
             <div style={{fontSize:isMobile?14:"0.78rem",color:T.textMute,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
