@@ -1373,83 +1373,7 @@ export default function App() {
         </div>
       )}
 
-      {selectedTask&&isMobile&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:1000}} onClick={()=>setSelectedTask(null)}>
-          <div style={{background:T.modal,borderRadius:"16px 16px 0 0",border:`1px solid ${T.goldB}`,padding:24,width:"100%",maxWidth:430,maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-            <div style={{width:36,height:4,borderRadius:2,background:T.borderS,margin:"0 auto 20px"}}/>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 12px",borderRadius:20,background:PG[selectedTask.priority],border:`1px solid ${PC[selectedTask.priority]}44`,fontSize:11,fontWeight:700,color:PC[selectedTask.priority],textTransform:"uppercase",letterSpacing:"0.8px"}}>
-                <span style={{width:6,height:6,borderRadius:"50%",background:"currentColor",display:"inline-block"}}/>{PL[selectedTask.priority]}
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={16} color={T.textMute}/></button>
-              </div>
-            </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,color:T.text,lineHeight:1.35,marginBottom:18}}>{selectedTask.title}</div>
-            <div style={{display:"grid",gridTemplateColumns:selectedTask.startDate?"1fr 1fr":"1fr 1fr 1fr",gap:12,marginBottom:selectedTask.startDate?12:20}}>
-              {[
-                ...(selectedTask.startDate
-                  ? [{label:"Start Date",content:<input type="date" value={selectedTask.startDate||""} onChange={e=>updateTask(selectedTask.id,{startDate:e.target.value})} style={{...inp,color:T.gold,fontWeight:600}}/>},
-                     {label:"End Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>}]
-                  : [{label:"Due Date",content:<input type="date" value={selectedTask.dueDate||""} onChange={e=>updateTask(selectedTask.id,{dueDate:e.target.value})} style={{...inp,color:isOverdue(selectedTask.dueDate)?T.red:T.gold,fontWeight:600,border:`1px solid ${isOverdue(selectedTask.dueDate)?T.red:T.border}`}}/>}]),
-                {label:"Priority",content:<select value={selectedTask.priority} onChange={e=>updateTask(selectedTask.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                ...(!selectedTask.startDate?[{label:"Project",content:<select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>}]:[]),
-              ].map(({label,content})=>(
-                <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
-              ))}
-            </div>
-            {selectedTask.startDate&&<div style={{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:12}}>
-              <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Project</div><select value={selectedTask.projectId} onChange={e=>updateTask(selectedTask.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-            </div>}
-            <div style={{marginBottom:12}}>
-              <button onClick={()=>{if(selectedTask.startDate){updateTask(selectedTask.id,{startDate:""});}else{updateTask(selectedTask.id,{startDate:selectedTask.dueDate||todayStr()});}}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
-                {selectedTask.startDate?"- Single date":"+ Date range"}
-              </button>
-            </div>
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Syne',sans-serif"}}>Repeat</div>
-              <select value={selectedTask.recurrence||""} onChange={e=>updateTask(selectedTask.id,{recurrence:e.target.value||"",recurring:!!e.target.value})} disabled={!selectedTask.dueDate} style={{...inp,opacity:selectedTask.dueDate?1:0.4}}>
-                {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>
-                Sub-tasks{selectedTask.subtasks>0&&` (${selectedTask.subtasksDone}/${selectedTask.subtasks})`}
-              </div>
-              {(subTasks[selectedTask.id]||[]).map(sub=>(
-                <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${T.borderS}`}}>
-                  <button onClick={()=>toggleSubTask(selectedTask.id,sub.id)}
-                    style={{width:14,height:14,minWidth:14,borderRadius:3,border:`1.5px solid ${sub.isComplete?T.forest:T.forestMid}`,
-                      background:sub.isComplete?T.forest:"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    {sub.isComplete&&<svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke={T.bg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
-                  </button>
-                  <span style={{flex:1,fontSize:13,color:sub.isComplete?T.textMute:T.text,textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
-                  <button onClick={()=>deleteSubTask(selectedTask.id,sub.id)}
-                    style={{background:"none",border:"none",cursor:"pointer",padding:2}}>
-                    <Ico d={I.x} size={11} color={T.red}/>
-                  </button>
-                </div>
-              ))}
-              {addingSubTo===selectedTask.id ? (
-                <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 0"}}>
-                  <input autoFocus value={newSubTitle} onChange={e=>setNewSubTitle(e.target.value)}
-                    onKeyDown={e=>{if(e.key==="Enter")addSubTask(selectedTask.id,newSubTitle);if(e.key==="Escape"){setAddingSubTo(null);setNewSubTitle("");}}}
-                    placeholder="Sub-task title…"
-                    style={{flex:1,fontSize:12,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,outline:"none",fontFamily:"'Jost',sans-serif"}}/>
-                  <button onClick={()=>addSubTask(selectedTask.id,newSubTitle)}
-                    style={{fontSize:11,fontWeight:600,color:T.forest,background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>Add</button>
-                </div>
-              ) : (
-                <button onClick={()=>{setAddingSubTo(selectedTask.id);setNewSubTitle("");}}
-                  style={{fontSize:11,color:T.gold,background:"none",border:"none",cursor:"pointer",padding:"7px 0",fontFamily:"'Syne',sans-serif",fontWeight:500}}>
-                  + Add sub-task
-                </button>
-              )}
-            </div>
-            <button onClick={()=>toggleDone(selectedTask.id)} style={{width:"100%",padding:13,background:selectedTask.completed?"#C0392B":T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:15,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>{selectedTask.completed?"↩ Mark Incomplete":"✓ Mark Complete"}</button>
-          </div>
-        </div>
-      )}
+      {selectedTask&&isMobile&&renderDetailDrawer(selectedTask,true)}
 
       {assigningEmail&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setAssigningEmail(null)}>
@@ -1546,94 +1470,138 @@ export default function App() {
   // ── Desktop Detail Panel ─────────────────────────────────────
   const renderDetailPanel = () => {
     const task=selectedTask; if(!task) return null;
+    return renderDetailDrawer(task,false);
+  };
+
+  // Shared task-detail drawer body (desktop in-flow panel + mobile full-screen)
+  const renderDetailDrawer = (task, mob) => {
     const od=isOverdue(task.dueDate);
+    const fld={background:"var(--soft)",border:"1px solid var(--hair2)",borderRadius:0,padding:"8px 12px",fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--ink)",width:"100%",outline:"none",boxSizing:"border-box"};
+    const foc={onFocus:e=>e.currentTarget.style.borderColor="var(--accent)",onBlur:e=>e.currentTarget.style.borderColor="var(--hair2)"};
+    const lbl={fontFamily:"'DM Mono', monospace",fontSize:10,textTransform:"uppercase",letterSpacing:"0.14em",color:"var(--muted2)",marginBottom:8};
+    const sectionStyle={padding:"20px 28px",borderBottom:"1px solid var(--hair)"};
+    const container=mob
+      ? {position:"fixed",inset:0,width:"100vw",height:"100dvh",zIndex:1000,background:"var(--card)",borderLeft:"1px solid var(--hair)",boxShadow:"-4px 0 24px rgba(0,0,0,0.08)",borderRadius:0,display:"flex",flexDirection:"column"}
+      : {width:420,minWidth:420,height:"100%",background:"var(--card)",borderLeft:"1px solid var(--hair)",boxShadow:"-4px 0 24px rgba(0,0,0,0.08)",borderRadius:0,display:"flex",flexDirection:"column"};
     return (
-      <div style={{width:320,minWidth:320,background:T.bg2,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        <div style={{padding:"18px 20px 14px",borderBottom:`1px solid ${T.borderS}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,color:T.textMute,textTransform:"uppercase",letterSpacing:"0.15em"}}>Task Detail</div>
-          <div style={{display:"flex",gap:6}}>
-            <button onClick={()=>setSelectedTask(null)} style={{background:"none",border:"none",cursor:"pointer",padding:6}}><Ico d={I.x} size={15} color={T.textMute}/></button>
-          </div>
-        </div>
-        <div style={{flex:1,overflowY:"auto",padding:20,display:"flex",flexDirection:"column",gap:14}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 12px",borderRadius:20,background:PG[task.priority],border:`1px solid ${PC[task.priority]}44`,fontSize:11,fontWeight:700,color:PC[task.priority],textTransform:"uppercase",letterSpacing:"0.8px"}}>
-            <span style={{width:6,height:6,borderRadius:"50%",background:"currentColor",display:"inline-block"}}/>{PL[task.priority]}
+      <div style={container}>
+        {/* Header */}
+        <div style={{padding:"28px 28px 20px",borderBottom:"1px solid var(--hair)",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{fontFamily:"'DM Mono', monospace",fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:"var(--muted2)"}}>Task Detail</div>
+            <button onClick={()=>setSelectedTask(null)}
+              style={{width:32,height:32,borderRadius:"50%",border:"1px solid var(--hair2)",background:"transparent",color:"var(--muted2)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono', monospace",fontSize:16,lineHeight:1,transition:"all 0.15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.color="var(--accent)";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--muted2)";}}>×</button>
           </div>
           <input value={task.title} onChange={e=>updateTask(task.id,{title:e.target.value})}
-            style={{width:"100%",background:"transparent",border:"none",color:T.text,fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:600,outline:"none",lineHeight:1.35,padding:0}}
-          />
-          {task.startDate ? (
-            <>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Start Date</div><input type="date" value={task.startDate||""} onChange={e=>updateTask(task.id,{startDate:e.target.value})} style={{...inp,color:T.gold,fontWeight:600}}/></div>
-                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>End Date</div><input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/></div>
+            style={{width:"100%",marginTop:12,background:"transparent",border:"none",borderBottom:"1px solid var(--hair2)",color:"var(--title)",fontFamily:"'Cormorant Garamond', serif",fontWeight:500,fontSize:28,lineHeight:1.2,outline:"none",padding:"4px 0"}}
+            onFocus={e=>e.currentTarget.style.borderBottomColor="var(--accent)"} onBlur={e=>e.currentTarget.style.borderBottomColor="var(--hair2)"}/>
+        </div>
+
+        {/* Scroll body */}
+        <div style={{flex:1,overflowY:"auto"}}>
+          {/* Status pill */}
+          <div style={{padding:"18px 28px 0"}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6,background:"var(--soft)",border:"1px solid var(--hair2)",borderRadius:"999px",padding:"6px 14px",fontFamily:"'DM Mono', monospace",fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--muted2)"}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:PC[task.priority],display:"inline-block"}}/>{PL[task.priority]}
+            </span>
+          </div>
+
+          {/* Dates */}
+          <div style={sectionStyle}>
+            {task.startDate ? (
+              <>
+                <div style={{display:"flex",justifyContent:"space-between"}}>
+                  <div style={{...lbl,marginBottom:0}}>Start Date</div><div style={{...lbl,marginBottom:0}}>End Date</div>
+                </div>
+                <div style={{display:"flex",gap:12,marginTop:8}}>
+                  <input type="date" value={task.startDate||""} onChange={e=>updateTask(task.id,{startDate:e.target.value})} style={fld} {...foc}/>
+                  <input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...fld,borderColor:od?"#c25c44":"var(--hair2)"}} onFocus={e=>e.currentTarget.style.borderColor="var(--accent)"} onBlur={e=>e.currentTarget.style.borderColor=od?"#c25c44":"var(--hair2)"}/>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={lbl}>Due Date</div>
+                <input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...fld,borderColor:od?"#c25c44":"var(--hair2)"}} onFocus={e=>e.currentTarget.style.borderColor="var(--accent)"} onBlur={e=>e.currentTarget.style.borderColor=od?"#c25c44":"var(--hair2)"}/>
+              </>
+            )}
+            <button onClick={()=>{if(task.startDate){updateTask(task.id,{startDate:""});}else{updateTask(task.id,{startDate:task.dueDate||todayStr()});}}}
+              style={{background:"none",border:"none",cursor:"pointer",padding:0,marginTop:6,fontFamily:"'DM Mono', monospace",fontSize:11,color:"var(--accent)"}}>
+              {task.startDate?"· Single date":"· Date range"}
+            </button>
+          </div>
+
+          {/* Priority + Project */}
+          <div style={sectionStyle}>
+            <div style={{display:"flex",gap:16}}>
+              <div style={{flex:1}}>
+                <div style={lbl}>Priority</div>
+                <select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={fld} {...foc}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Priority</div><select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select></div>
-                <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Project</div><select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+              <div style={{flex:1}}>
+                <div style={lbl}>Project</div>
+                <select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={fld} {...foc}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
               </div>
-            </>
-          ) : (
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
-              {[
-                {label:"Due Date",content:<input type="date" value={task.dueDate||""} onChange={e=>updateTask(task.id,{dueDate:e.target.value})} style={{...inp,color:od?T.red:T.gold,fontWeight:600,border:`1px solid ${od?T.red:T.border}`}}/>},
-                {label:"Priority",content:<select value={task.priority} onChange={e=>updateTask(task.id,{priority:Number(e.target.value)})} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                {label:"Project",content:<select value={task.projectId} onChange={e=>updateTask(task.id,{projectId:e.target.value})} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
-              ].map(({label,content})=>(
-                <div key={label}><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>{content}</div>
-              ))}
             </div>
-          )}
-          <button onClick={()=>{if(task.startDate){updateTask(task.id,{startDate:""});}else{updateTask(task.id,{startDate:task.dueDate||todayStr()});}}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
-            {task.startDate?"- Single date":"+ Date range"}
-          </button>
-          <div style={{marginTop:8}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Syne',sans-serif"}}>Repeat</div>
-            <select value={task.recurrence||""} onChange={e=>updateTask(task.id,{recurrence:e.target.value||"",recurring:!!e.target.value})} disabled={!task.dueDate} style={{...inp,opacity:task.dueDate?1:0.4}}>
+          </div>
+
+          {/* Repeat */}
+          <div style={sectionStyle}>
+            <div style={lbl}>Repeat</div>
+            <select value={task.recurrence||""} onChange={e=>updateTask(task.id,{recurrence:e.target.value||"",recurring:!!e.target.value})} disabled={!task.dueDate} style={{...fld,opacity:task.dueDate?1:0.4}} {...foc}>
               {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-          {task.fromEmail&&<div style={{background:T.emailS,border:`1px solid ${T.emailS}`,borderRadius:8,padding:"10px 12px"}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.email,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>Email Origin</div>
-            <div style={{fontSize:12,color:T.textSoft}}>From: {task.emailFrom}</div>
-          </div>}
-          <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Syne',sans-serif"}}>
-              Sub-tasks{task.subtasks>0&&` (${task.subtasksDone}/${task.subtasks})`}
+
+          {/* Email origin */}
+          {task.fromEmail&&(
+            <div style={sectionStyle}>
+              <div style={lbl}>Email Origin</div>
+              <div style={{background:"var(--soft)",border:"1px solid var(--hair2)",padding:"10px 12px",fontFamily:"'DM Mono', monospace",fontSize:12,color:"var(--muted2)"}}>From: {task.emailFrom}</div>
             </div>
-            {(subTasks[task.id]||[]).map(sub=>(
-              <div key={sub.id} className="subtask-row" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${T.borderS}`}}>
+          )}
+
+          {/* Sub-tasks */}
+          <div style={sectionStyle}>
+            <div style={{...lbl,marginBottom:12}}>Sub-tasks{task.subtasks>0&&` (${task.subtasksDone}/${task.subtasks})`}</div>
+            {(subTasks[task.id]||[]).map((sub,si,arr)=>(
+              <div key={sub.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:si===arr.length-1?"none":"1px solid var(--hair)"}}>
                 <button onClick={()=>toggleSubTask(task.id,sub.id)}
-                  style={{width:14,height:14,minWidth:14,borderRadius:3,border:`1.5px solid ${sub.isComplete?T.forest:T.forestMid}`,
-                    background:sub.isComplete?T.forest:"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  {sub.isComplete&&<svg width={8} height={8} viewBox="0 0 24 24" fill="none" stroke={T.bg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+                  style={{width:18,height:18,minWidth:18,borderRadius:"3px",border:sub.isComplete?"1.5px solid var(--accent)":"1.5px solid var(--muted)",background:sub.isComplete?"var(--accent)":"transparent",cursor:"pointer",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {sub.isComplete&&<svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#0c0e0b" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
                 </button>
-                <span style={{flex:1,fontSize:13,color:sub.isComplete?T.textMute:T.text,textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
-                <button onClick={()=>deleteSubTask(task.id,sub.id)} className="subtask-del"
-                  style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0,transition:"opacity 0.15s"}}>
-                  <Ico d={I.x} size={11} color={T.red}/>
-                </button>
+                <span style={{flex:1,fontFamily:"'DM Mono', monospace",fontSize:13,color:sub.isComplete?"var(--muted)":"var(--ink)",textDecoration:sub.isComplete?"line-through":"none"}}>{sub.title}</span>
+                <button onClick={()=>deleteSubTask(task.id,sub.id)}
+                  style={{background:"transparent",border:"none",cursor:"pointer",padding:2,fontFamily:"'DM Mono', monospace",fontSize:11,color:"var(--muted2)",lineHeight:1,transition:"color 0.15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.color="var(--accent)"} onMouseLeave={e=>e.currentTarget.style.color="var(--muted2)"}>×</button>
               </div>
             ))}
             {addingSubTo===task.id ? (
-              <div style={{display:"flex",gap:6,alignItems:"center",padding:"7px 0"}}>
+              <div style={{display:"flex",gap:8,alignItems:"center",marginTop:10}}>
                 <input autoFocus value={newSubTitle} onChange={e=>setNewSubTitle(e.target.value)}
                   onKeyDown={e=>{if(e.key==="Enter")addSubTask(task.id,newSubTitle);if(e.key==="Escape"){setAddingSubTo(null);setNewSubTitle("");}}}
-                  placeholder="Sub-task title…"
-                  style={{flex:1,fontSize:12,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,outline:"none",fontFamily:"'Jost',sans-serif"}}/>
+                  placeholder="Sub-task title…" style={{...fld,fontSize:12}} {...foc}/>
                 <button onClick={()=>addSubTask(task.id,newSubTitle)}
-                  style={{fontSize:11,fontWeight:600,color:T.forest,background:"none",border:"none",cursor:"pointer",fontFamily:"'Syne',sans-serif"}}>Add</button>
+                  style={{fontFamily:"'DM Mono', monospace",fontSize:12,color:"var(--accent)",background:"none",border:"none",cursor:"pointer"}}>Add</button>
               </div>
             ) : (
               <button onClick={()=>{setAddingSubTo(task.id);setNewSubTitle("");}}
-                style={{fontSize:11,color:T.gold,background:"none",border:"none",cursor:"pointer",padding:"7px 0",fontFamily:"'Syne',sans-serif",fontWeight:500}}>
+                style={{fontFamily:"'DM Mono', monospace",fontSize:12,color:"var(--accent)",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:10}}>
                 + Add sub-task
               </button>
             )}
           </div>
         </div>
-        <div style={{padding:"14px 20px 50px",borderTop:`1px solid ${T.borderS}`,flexShrink:0}}>
-          <button onClick={()=>toggleDone(task.id)} style={{width:"100%",padding:11,background:task.completed?"#C0392B":T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:13,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>{task.completed?"↩ Mark Incomplete":"✓ Mark Complete"}</button>
+
+        {/* Footer */}
+        <div style={{padding:"24px 28px",marginTop:"auto",borderTop:"1px solid var(--hair)",flexShrink:0,display:"flex",flexDirection:"column",gap:10}}>
+          <button onClick={()=>toggleDone(task.id)}
+            style={{width:"100%",height:46,background:"var(--pill)",color:"var(--pillfg)",border:"none",borderRadius:"999px",cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em"}}>{task.completed?"Mark Incomplete":"Mark Complete"}</button>
+          <button onClick={()=>{if(window.confirm('Delete this task?'))deleteTask(task.id);}}
+            style={{width:"100%",height:38,background:"transparent",border:"1px solid var(--hair2)",color:"var(--muted2)",borderRadius:0,cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",transition:"all 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#b04a34";e.currentTarget.style.color="#b04a34";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--muted2)";}}>Delete</button>
         </div>
       </div>
     );
