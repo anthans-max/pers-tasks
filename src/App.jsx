@@ -1158,33 +1158,50 @@ export default function App() {
 
   const renderEmailView = (padH=16) => {
     const hasSel = selectedEmails.size > 0;
+    const PRIORITY_FAMILY = {1:'urgent',2:'gold',3:'green',4:'slate'};
+    const dateEyebrow = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase();
+
+    const header = (
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",padding:isMobile?"24px 16px 14px":"30px 44px 18px",borderBottom:"1px solid var(--hair)"}}>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:300,fontSize:isMobile?38:46,lineHeight:1,color:"var(--title)"}}>Email Capture</div>
+          <div style={{fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.12em",color:"var(--muted)",marginTop:8}}>{dateEyebrow} · {emailTasks.length} TO TRIAGE</div>
+        </div>
+        <button onClick={()=>runSync('email')} disabled={!!syncing}
+          style={{display:"flex",alignItems:"center",gap:8,height:46,padding:"0 22px",borderRadius:"999px",border:"none",background:syncing==='email'?"var(--soft)":"var(--pill)",color:syncing==='email'?"var(--muted)":"var(--pillfg)",cursor:syncing?"not-allowed":"pointer",fontFamily:"'DM Mono', monospace",fontSize:12.5,letterSpacing:"0.06em",textTransform:"uppercase",transition:"all 0.15s",flexShrink:0}}>
+          {syncing==='email'
+            ? <><span style={{display:"inline-block",width:12,height:12,border:"2px solid var(--muted)",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Syncing…</>
+            : <>Sync Now</>}
+        </button>
+      </div>
+    );
+
     return (
-      <div style={{padding:`16px ${padH}px`,paddingBottom: hasSel ? `${16+72}px` : 16}}>
+      <div>
+        {header}
         {emailTasks.length===0?(
-          <div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
-            <div style={{fontSize:40,marginBottom:12}}>✉️</div>
-            <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>All caught up</div>
-          </div>
+          <div style={{padding:"60px 0",textAlign:"center",fontFamily:"'DM Mono', monospace",fontSize:14,color:"var(--muted2)"}}>Inbox zero — every email triaged. ❋</div>
         ):(
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{maxWidth:1040,padding:isMobile?"20px 16px":"32px 44px",paddingBottom:hasSel?(isMobile?"110px":"100px"):(isMobile?110:48),display:"flex",flexDirection:"column",gap:12}}>
             {emailTasks.map(et=>{
               const checked = selectedEmails.has(et.id);
+              const c = getChipColors(PRIORITY_FAMILY[et.priority],theme);
               return (
-                <div key={et.id} style={{background:T.bg2,border:`1px solid ${checked?T.goldB:T.emailS}`,borderLeft:`3px solid ${checked?T.gold:T.email}`,borderRadius:12,padding:"14px 16px",transition:"border-color 0.15s"}}>
-                  <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                    <button onClick={()=>toggleEmailSelect(et.id)}
-                      style={{width:20,height:20,minWidth:20,borderRadius:5,border:`2px solid ${checked?T.gold:T.borderS}`,background:checked?T.gold:"transparent",cursor:"pointer",padding:0,flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}
-                    >
-                      {checked&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    </button>
-                    <div style={{width:36,height:36,borderRadius:10,background:T.emailS,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>✉️</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6}}>{et.title}</div>
-                      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                        <span style={{fontSize:11,background:T.emailS,color:T.email,padding:"2px 8px",borderRadius:8,fontWeight:600}}>From: {et.emailFrom}</span>
-                        <span style={{fontSize:11,background:PG[et.priority],color:PC[et.priority],padding:"2px 8px",borderRadius:8,fontWeight:600}}>{PL[et.priority]}</span>
-                        {et.dueDate&&<span style={{fontSize:11,color:isOverdue(et.dueDate)?T.red:T.textMute,fontWeight:600}}>📅 {fmtDate(et.dueDate)}</span>}
-                      </div>
+                <div key={et.id}
+                  style={{display:"flex",gap:18,alignItems:"flex-start",background:"var(--card)",border:checked?"1px solid var(--accent)":"1px solid var(--hair)",borderLeft:`3px solid ${c.border}`,padding:"20px 22px",borderRadius:0,transition:"box-shadow 0.2s"}}
+                  onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.1)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="none"}>
+                  <button onClick={()=>toggleEmailSelect(et.id)}
+                    style={{width:26,height:26,minWidth:26,borderRadius:"6px",border:checked?"1.5px solid var(--accent)":"1.5px solid var(--muted)",background:checked?"var(--accent)":"transparent",cursor:"pointer",padding:0,flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}
+                    onMouseEnter={e=>{if(!checked)e.currentTarget.style.borderColor="var(--accent)";}} onMouseLeave={e=>{if(!checked)e.currentTarget.style.borderColor="var(--muted)";}}>
+                    {checked&&<svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#0c0e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </button>
+                  <div style={{width:44,height:44,minWidth:44,background:"var(--soft)",border:"1px solid var(--hair)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18,color:"var(--muted2)"}}>✉</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"'DM Mono', monospace",fontWeight:500,fontSize:16,lineHeight:1.4,color:"var(--ink)"}}>{et.title}</div>
+                    <div style={{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap",marginTop:9}}>
+                      <span style={{background:"var(--soft)",fontFamily:"'DM Mono', monospace",fontSize:11.5,color:"var(--muted2)",padding:"4px 10px",borderRadius:0}}>From: {et.emailFrom}</span>
+                      <span style={{fontFamily:"'DM Mono', monospace",fontSize:11.5,textTransform:"uppercase",letterSpacing:"0.04em",color:c.color}}>{PL[et.priority]}</span>
+                      {et.dueDate&&<span style={{fontFamily:"'DM Mono', monospace",fontSize:11.5,color:isOverdue(et.dueDate)?"#c25c44":"var(--muted)"}}>📅 {fmtDate(et.dueDate)}</span>}
                     </div>
                   </div>
                 </div>
@@ -1193,18 +1210,18 @@ export default function App() {
           </div>
         )}
         {hasSel&&(
-          <div style={{position:"sticky",bottom:0,marginLeft:`-${padH}px`,marginRight:`-${padH}px`,background:`linear-gradient(0deg,${T.bg2} 85%,transparent)`,padding:`12px ${padH+4}px 16px`,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontSize:13,fontWeight:700,color:T.gold,whiteSpace:"nowrap"}}>{selectedEmails.size} selected</span>
+          <div style={{position:"sticky",bottom:0,background:"var(--card)",borderTop:"1px solid var(--hair)",padding:isMobile?"14px 16px":"14px 44px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <span style={{fontFamily:"'DM Mono', monospace",fontSize:12.5,letterSpacing:"0.04em",textTransform:"uppercase",color:"var(--accent)",whiteSpace:"nowrap"}}>{selectedEmails.size} selected</span>
             <select value={batchProject} onChange={e=>setBatchProject(e.target.value)}
-              style={{flex:1,minWidth:140,background:"rgba(44,40,32,0.06)",border:`1px solid ${T.goldB}`,color:T.text,borderRadius:8,padding:"7px 10px",fontSize:12,outline:"none"}}>
+              style={{flex:1,minWidth:140,background:"var(--soft)",border:"1px solid var(--hair2)",color:"var(--ink)",borderRadius:0,padding:"9px 12px",fontFamily:"'DM Mono', monospace",fontSize:12,outline:"none"}}>
               {sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button onClick={()=>batchAssign(batchProject)}
-              style={{padding:"7px 16px",background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",whiteSpace:"nowrap",fontFamily:"'Jost', sans-serif"}}>
+              style={{height:42,padding:"0 20px",background:"var(--pill)",border:"none",color:"var(--pillfg)",borderRadius:"999px",cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:12,letterSpacing:"0.05em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
               Assign
             </button>
             <button onClick={batchDismiss}
-              style={{padding:"7px 16px",background:"#C0392B",border:"none",color:"#fff",borderRadius:100,cursor:"pointer",fontSize:12,fontWeight:400,letterSpacing:"0.05em",whiteSpace:"nowrap",fontFamily:"'Jost', sans-serif"}}>
+              style={{height:42,padding:"0 20px",background:"transparent",border:"1px solid var(--hair2)",color:"var(--ink)",borderRadius:"999px",cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:12,letterSpacing:"0.05em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
               Dismiss
             </button>
           </div>
@@ -1887,9 +1904,9 @@ export default function App() {
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {renderSidebar()}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:"1px solid var(--hair)"}}>
-          {(view==="tasks"||view==="today") ? renderTasksHeader() : view==="calendar" ? null : renderMainHeader()}
+          {(view==="tasks"||view==="today") ? renderTasksHeader() : (view==="calendar"||view==="email") ? null : renderMainHeader()}
           {(view==="tasks"||view==="today")&&renderFilterPills(44)}
-          <div style={{flex:1,overflowY:"auto",padding:view==="calendar"?0:"0 32px 52px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:(view==="calendar"||view==="email")?0:"0 32px 52px"}}>
             {view==="tasks"&&renderFeed(false)}
             {view==="today"&&renderFeed(true)}
             {view==="calendar"&&renderCalendar(0)}
