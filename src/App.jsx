@@ -79,6 +79,8 @@ const isToday = (d) => { if (!d) return false; const n = new Date(); n.setHours(
 const isActive = (s, e) => { if (!s || !e) return false; const now = new Date(); now.setHours(0,0,0,0); return new Date(s+"T00:00:00") <= now && now <= new Date(e+"T00:00:00"); };
 const matchesDay = (x, day) => { if (x.startDate && x.dueDate) return x.startDate <= day && day <= x.dueDate; return x.dueDate === day; };
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const addDaysStr = (n) => { const d = new Date(); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const fmtSlash = (s) => { if (!s) return ""; const [y,m,d] = s.split("-"); return `${m} / ${d} / ${y}`; };
 const computeNextDate = (dateStr, pattern) => {
   if (!dateStr || !pattern) return "";
   const d = new Date(dateStr + "T00:00:00");
@@ -220,6 +222,8 @@ export default function App() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
   const [showMorning, setShowMorning] = useState(true);
+  const [quickAddDone, setQuickAddDone] = useState(false);
+  const isQuickAdd = typeof window !== "undefined" && window.location.pathname === "/quick-add";
   const [syncing, setSyncing] = useState(null); // "news" | "email" | "calendar" | null
   const [syncToast, setSyncToast] = useState(null); // { message, isError }
   const [yssQuote, setYssQuote] = useState(pickFallbackQuote);
@@ -268,6 +272,21 @@ export default function App() {
       }
     });
   }, []);
+
+  // Quick-add (/quick-add): skip splash, seed defaults (Medium priority, due today+3).
+  useEffect(() => {
+    if (!isQuickAdd) return;
+    setShowMorning(false);
+    setNewPrio(3);
+    setNewDate(addDaysStr(3));
+  }, [isQuickAdd]);
+
+  // Default the quick-add project to "General" once projects load.
+  useEffect(() => {
+    if (!isQuickAdd) return;
+    const gen = projects.find(p => p.name === "General");
+    if (gen) setNewProject(gen.id);
+  }, [isQuickAdd, projects]);
 
   useEffect(() => {
     if (!showMorning) return;
@@ -467,6 +486,15 @@ export default function App() {
       recurring:!!rec, recurrence:rec||null, recurring_parent_id:null,
       subtasks:0, subtasks_done:0, from_email:false, notes:"",
     }).then(({error})=>{ if(error) console.error("addTask:", error.message); });
+  };
+  // Quick-add submit — reuses the exact addTask logic, then re-seeds defaults for rapid repeated adds.
+  const handleQuickAdd = () => {
+    if (!newTitle.trim()) return;
+    addTask();                       // identical insert into tm_tasks as the main New Task modal
+    setNewPrio(3);                   // addTask resets priority→None; restore Medium default
+    setNewDate(addDaysStr(3));       // addTask clears the date; restore today+3 default
+    setQuickAddDone(true);
+    setTimeout(() => setQuickAddDone(false), 1600);
   };
   const toggleDone = async (id) => {
     const task = tasks.find(t => t.id === id);
@@ -1610,6 +1638,113 @@ export default function App() {
       ))}
     </div>
   );
+
+  // ── QUICK ADD (standalone /quick-add route — never shows the splash) ──
+  if (isQuickAdd) {
+    const sectionLabel = { fontFamily:"'Syne',sans-serif", fontSize:10, fontWeight:600, color:"#8a7a64", textTransform:"uppercase", letterSpacing:"0.1em" };
+    const fieldShadow = "0 4px 14px rgba(45,74,53,0.08)";
+    const projName = (projects.find(p => p.id === newProject)?.name) || "General";
+    const prios = [{v:1,l:"Urgent"},{v:2,l:"High"},{v:3,l:"Medium"},{v:4,l:"None"}];
+    return (
+      <div style={{minHeight:"100dvh",background:"#e7e5df",display:"flex",justifyContent:"center"}}>
+        <div style={{position:"relative",width:"100%",maxWidth:430,minHeight:"100dvh",background:"#EFEBE3",padding:"62px 22px 44px",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* grid texture overlay */}
+          <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:"linear-gradient(rgba(45,74,53,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(45,74,53,0.04) 1px,transparent 1px)",backgroundSize:"26px 26px",WebkitMaskImage:"radial-gradient(circle at 50% 0%, #000 0%, transparent 70%)",maskImage:"radial-gradient(circle at 50% 0%, #000 0%, transparent 70%)"}}/>
+          {/* copper glow top-right */}
+          <div style={{position:"absolute",top:-120,right:-120,width:340,height:340,pointerEvents:"none",background:"radial-gradient(circle, rgba(181,112,58,0.14) 0%, transparent 70%)"}}/>
+
+          {/* content */}
+          <div style={{position:"relative",zIndex:1,display:"flex",flexDirection:"column",flex:1}}>
+            {/* header row */}
+            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:34}}>
+              <span style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:11,color:"#B5703A",textTransform:"uppercase",letterSpacing:"0.14em"}}>Lotus List</span>
+              <span style={{fontFamily:"'Syne',sans-serif",fontWeight:600,fontSize:10,color:"#2D4A35",opacity:0.5}}>QUICK ADD</span>
+            </div>
+
+            {/* H1 */}
+            <h1 style={{margin:"0 0 22px",fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:34,color:"#2D4A35"}}>
+              New <em style={{fontStyle:"italic",color:"#B5703A"}}>task.</em>
+            </h1>
+
+            {/* task name */}
+            <input
+              value={newTitle}
+              onChange={e=>setNewTitle(e.target.value)}
+              placeholder="Task name"
+              style={{width:"100%",height:54,border:"none",borderRadius:15,background:"#FFFFFF",fontFamily:"'DM Mono',monospace",fontSize:15,color:"#2D4A35",padding:"0 18px",outline:"none",boxShadow:"0 0 0 2px rgba(181,112,58,0.45), 0 4px 14px rgba(45,74,53,0.10)"}}
+            />
+
+            {/* priority */}
+            <div style={{...sectionLabel,margin:"24px 0 9px"}}>Priority</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {prios.map(p=>{
+                const sel = newPrio===p.v;
+                return (
+                  <button key={p.v} onClick={()=>setNewPrio(p.v)} style={{
+                    height:48,borderRadius:12,border:"none",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:13,
+                    background:sel?"#2D4A35":"#FFFFFF",color:sel?"#F4F1EC":"#2D4A35",
+                    transform:sel?"translateY(2px)":"none",
+                    boxShadow:sel?"inset 0 2px 5px rgba(0,0,0,0.3)":"0 3px 0 rgba(45,74,53,0.14), 0 4px 10px rgba(45,74,53,0.06)",
+                  }}>{p.l}</button>
+                );
+              })}
+            </div>
+
+            {/* due date */}
+            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",margin:"24px 0 9px"}}>
+              <span style={sectionLabel}>Due date</span>
+              <button onClick={()=>{ setNewDateRange(v=>!v); if(!newDateRange && !newStartDate) setNewStartDate(todayStr()); }}
+                style={{border:"none",background:"none",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:12,color:"#B5703A",padding:0}}>
+                {newDateRange ? "– Remove range" : "+ Date range"}
+              </button>
+            </div>
+            {newDateRange && (
+              <label style={{position:"relative",display:"flex",alignItems:"center",gap:10,height:54,borderRadius:15,background:"#FFFFFF",boxShadow:fieldShadow,padding:"0 18px",marginBottom:10}}>
+                <i className="ti ti-calendar" style={{fontSize:18,color:"#B5703A"}}/>
+                <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:"#2D4A35"}}>{newStartDate ? fmtSlash(newStartDate) : "Start date"}</span>
+                <input type="date" value={newStartDate} onChange={e=>setNewStartDate(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+              </label>
+            )}
+            <label style={{position:"relative",display:"flex",alignItems:"center",gap:10,height:54,borderRadius:15,background:"#FFFFFF",boxShadow:fieldShadow,padding:"0 18px"}}>
+              <i className="ti ti-calendar" style={{fontSize:18,color:"#B5703A"}}/>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:"#2D4A35"}}>{newDate ? fmtSlash(newDate) : "Select date"}</span>
+              <input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+            </label>
+
+            {/* project + repeat */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:14}}>
+              <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,borderRadius:15,background:"#FFFFFF",boxShadow:fieldShadow,padding:"0 14px"}}>
+                <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,color:"#2D4A35",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{projName}</span>
+                <i className="ti ti-chevron-down" style={{fontSize:16,color:"#2D4A35",opacity:0.45}}/>
+                <select value={newProject} onChange={e=>setNewProject(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none"}}>
+                  {sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,borderRadius:15,background:"#FFFFFF",boxShadow:fieldShadow,padding:"0 14px"}}>
+                <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,color:"#2D4A35"}}>{RL[newRecurrence] || "None"}</span>
+                <i className="ti ti-chevron-down" style={{fontSize:16,color:"#2D4A35",opacity:0.45}}/>
+                <select value={newRecurrence} onChange={e=>setNewRecurrence(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%",border:"none"}}>
+                  {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* add button */}
+            <button onClick={handleQuickAdd} style={{
+              marginTop:"auto",width:"100%",height:60,borderRadius:16,border:"none",cursor:"pointer",
+              background:quickAddDone ? "linear-gradient(180deg,#3D6348,#2D4A35)" : "linear-gradient(180deg,#345740,#2D4A35)",
+              color:"#F4F1EC",fontFamily:"'DM Mono',monospace",fontWeight:500,fontSize:14,textTransform:"uppercase",letterSpacing:"0.1em",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+              boxShadow:"0 3px 0 #1d3023, 0 10px 24px rgba(45,74,53,0.38)",
+            }}>
+              <i className={quickAddDone ? "ti ti-check" : "ti ti-plus"} style={{fontSize:18,color:"#F4F1EC"}}/>
+              {quickAddDone ? "Task added" : "Add Task"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── MORNING SPLASH ─────────────────────────────────────────
   if (showMorning) {
