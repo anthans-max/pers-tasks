@@ -1357,7 +1357,7 @@ export default function App() {
       {key:"news",label:"News"},
     ];
     return (
-    <div style={{width:272,minWidth:272,background:"var(--sidebar)",display:"flex",flexDirection:"column",padding:"28px 20px",fontFamily:"'DM Mono', monospace",overflow:"hidden"}}>
+    <div style={{width:272,minWidth:272,background:"var(--sidebar)",display:"flex",flexDirection:"column",padding:"28px 20px",paddingBottom:"20px",fontFamily:"'DM Mono', monospace",overflow:"hidden"}}>
       {/* Wordmark */}
       <div style={{marginBottom:26}}>
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:27,letterSpacing:"0.05em",color:"#f0ede6",lineHeight:1}}>
@@ -1407,7 +1407,7 @@ export default function App() {
       </div>
 
       {/* Theme toggle */}
-      <button onClick={toggleTheme} style={{height:42,background:"transparent",border:"1px solid rgba(255,255,255,0.16)",borderRadius:0,fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(240,237,230,0.78)",marginTop:14,cursor:"pointer"}}>
+      <button onClick={toggleTheme} style={{height:42,background:"transparent",border:"1px solid rgba(255,255,255,0.16)",borderRadius:0,fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(240,237,230,0.78)",marginTop:14,marginBottom:8,cursor:"pointer"}}>
         {isDark?"☀  Light mode":"☾  Dark mode"}
       </button>
     </div>
