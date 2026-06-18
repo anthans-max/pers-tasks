@@ -1624,16 +1624,16 @@ export default function App() {
             )}
           </div>
 
-        </div>
+          {/* Actions */}
+          <div style={{padding:"20px 28px",borderTop:"1px solid var(--hair)"}}>
+            <button onClick={()=>toggleDone(task.id)}
+              style={{width:"100%",height:46,marginBottom:10,background:"var(--pill)",color:"var(--pillfg)",border:"none",borderRadius:"999px",cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em"}}>{task.completed?"Mark Incomplete":"Mark Complete"}</button>
+            <button onClick={()=>{if(window.confirm('Delete this task?'))deleteTask(task.id);}}
+              style={{width:"100%",height:38,background:"transparent",border:"1px solid var(--hair2)",color:"var(--muted2)",borderRadius:0,cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",transition:"all 0.15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#b04a34";e.currentTarget.style.color="#b04a34";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--muted2)";}}>Delete</button>
+          </div>
 
-        {/* Footer */}
-        <div style={{padding:"24px 28px",borderTop:"1px solid var(--hair)",flexShrink:0,display:"flex",flexDirection:"column",gap:10}}>
-          <button onClick={()=>{if(window.confirm('Delete this task?'))deleteTask(task.id);}}
-            style={{width:"100%",height:38,background:"transparent",border:"1px solid var(--hair2)",color:"var(--muted2)",borderRadius:0,cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:13,textTransform:"uppercase",letterSpacing:"0.06em",transition:"all 0.15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor="#b04a34";e.currentTarget.style.color="#b04a34";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--muted2)";}}>Delete</button>
-          <button onClick={()=>toggleDone(task.id)}
-            style={{width:"100%",height:46,background:"var(--pill)",color:"var(--pillfg)",border:"none",borderRadius:"999px",cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:14,textTransform:"uppercase",letterSpacing:"0.06em"}}>{task.completed?"Mark Incomplete":"Mark Complete"}</button>
         </div>
       </div>
     );
