@@ -1652,6 +1652,8 @@ export default function App() {
           <div style={{position:"absolute",inset:0,pointerEvents:"none",backgroundImage:"linear-gradient(rgba(45,74,53,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(45,74,53,0.04) 1px,transparent 1px)",backgroundSize:"26px 26px",WebkitMaskImage:"radial-gradient(circle at 50% 0%, #000 0%, transparent 70%)",maskImage:"radial-gradient(circle at 50% 0%, #000 0%, transparent 70%)"}}/>
           {/* copper glow top-right */}
           <div style={{position:"absolute",top:-120,right:-120,width:340,height:340,pointerEvents:"none",background:"radial-gradient(circle, rgba(181,112,58,0.14) 0%, transparent 70%)"}}/>
+          {/* top accent bar — full-bleed, flush to the top edge */}
+          <div style={{position:"absolute",top:0,left:0,right:0,height:10,background:"#2D4A35",zIndex:2}}/>
 
           {/* content */}
           <div style={{position:"relative",zIndex:1,display:"flex",flexDirection:"column",flex:1}}>
