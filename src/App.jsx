@@ -1734,30 +1734,30 @@ export default function App() {
         background:T.bg, color:T.text, fontFamily:"'Jost', sans-serif",
         minHeight:"100dvh", display:"flex", flexDirection:"column", alignItems:"center",
         justifyContent:"flex-start",
-        padding:"16px 24px 40px", textAlign:"center", overflowY:"auto",
+        padding:isMobile?"40px 24px 60px":"16px 24px 40px", textAlign:"center", overflowY:"auto",
       }}>
         <div style={{flex:"0 0 auto",minHeight:8}}/>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:"100%",flex:"0 0 auto"}}>
         {/* Wordmark */}
-        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,marginBottom:12,display:"flex",alignItems:"baseline",gap:1}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?18:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,marginBottom:12,display:"flex",alignItems:"baseline",gap:1}}>
           Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
         </div>
 
         {/* Greeting */}
-        <div style={{fontFamily:"'Syne',sans-serif",fontSize:"0.6rem",fontWeight:500,letterSpacing:"0.22em",textTransform:"uppercase",color:T.textMute,marginBottom:8}}>Good Morning</div>
-        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",fontWeight:600,color:T.text,marginBottom:6}}>Welcome back, Anthan</div>
-        <div style={{fontSize:"0.82rem",color:T.textMute,marginBottom:40}}>{dateStr}  ·  Los Angeles</div>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:isMobile?13:"0.6rem",fontWeight:500,letterSpacing:"0.22em",textTransform:"uppercase",color:T.textMute,marginBottom:8}}>Good Morning</div>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?52:"2rem",fontWeight:600,color:T.text,marginBottom:6}}>Welcome back, Anthan</div>
+        <div style={{fontSize:isMobile?16:"0.82rem",color:T.textMute,marginBottom:40}}>{dateStr}  ·  Los Angeles</div>
 
         {/* YSS Quote */}
         {yssQuote.quote && (
-          <div style={{maxWidth:620,width:"100%",textAlign:"left",marginBottom:48,padding:"0 8px"}}>
+          <div style={{maxWidth:620,width:"100%",textAlign:"left",marginBottom:48,padding:isMobile?"0 24px":"0 8px"}}>
             {yssQuote.topic && (
               <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.2em",textTransform:"uppercase",color:"#B5703A",border:"1px solid #B5703A",borderRadius:20,padding:"3px 14px",display:"inline-block",marginBottom:"0.75rem"}}>{yssQuote.topic}</div>
             )}
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.2rem",fontStyle:"italic",lineHeight:1.7,color:T.text,marginBottom:14}}>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?20:"1.2rem",fontStyle:"italic",lineHeight:isMobile?1.6:1.7,color:T.text,marginBottom:14}}>
               "{yssQuote.quote}"
             </div>
-            <div style={{fontSize:"0.78rem",color:T.textMute,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <div style={{fontSize:isMobile?14:"0.78rem",color:T.textMute,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <span style={{fontWeight:600,color:T.textSoft}}>{yssQuote.attribution}</span>
               <span>·</span>
               <a href="https://yssofindia.org/quote" target="_blank" rel="noopener noreferrer" style={{color:T.textMute,textDecoration:"none",fontSize:"0.72rem"}}>
@@ -1776,6 +1776,7 @@ export default function App() {
             background:T.forest,color:"#fff",
             border:"none",borderRadius:24,padding:"12px 36px",
             cursor:"pointer",transition:"background 0.2s",
+            width:isMobile?"100%":undefined,
           }}
           onMouseEnter={e=>e.currentTarget.style.background=T.forestMid}
           onMouseLeave={e=>e.currentTarget.style.background=T.forest}
