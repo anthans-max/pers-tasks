@@ -1753,7 +1753,7 @@ export default function App() {
             {yssQuote.topic && (
               <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.2em",textTransform:"uppercase",color:"#B5703A",border:"1px solid #B5703A",borderRadius:20,padding:"3px 14px",display:"inline-block",marginBottom:"0.75rem"}}>{yssQuote.topic}</div>
             )}
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?24:"1.45rem",fontStyle:"italic",lineHeight:1.65,color:T.text,marginBottom:14}}>
+            <div style={{fontFamily:isMobile?"'Jost', sans-serif":"'Cormorant Garamond',serif",fontWeight:isMobile?700:undefined,fontSize:isMobile?24:"1.45rem",fontStyle:isMobile?"normal":"italic",lineHeight:1.65,color:T.text,marginBottom:14}}>
               "{yssQuote.quote}"
             </div>
             <div style={{fontSize:isMobile?14:"0.78rem",color:T.textMute,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
