@@ -276,13 +276,10 @@ export default function App() {
   }, [theme]);
   const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light');
   const isDark = theme === 'dark';
-  // Add-task entry point: focus the inline quick-add bar (Phase 2) when present,
-  // otherwise fall back to the existing add modal so adding still works.
-  const goAdd = () => {
-    const focusQa = () => { const el = document.getElementById('ls-qa-input'); if (el) el.focus(); else setAddModal(true); };
-    if (view !== 'tasks') { setView('tasks'); setDayFilter(null); setTimeout(focusQa, 60); }
-    else focusQa();
-  };
+  // Add-task entry point: open the New Task modal with a clean form.
+  const resetAddForm = () => { setNewTitle(""); setNewPrio(3); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setNewProject("general"); setNewRecurrence(""); };
+  const goAdd = () => { resetAddForm(); setAddModal(true); };
+  const closeAddModal = () => { resetAddForm(); setAddModal(false); };
   const [dayFilter, setDayFilter] = useState(null);
   const [projectFilter, setProjectFilter] = useState("all");
   const [selectedTask, setSelectedTask] = useState(null);
@@ -319,6 +316,13 @@ export default function App() {
   const [syncToast, setSyncToast] = useState(null); // { message, isError }
   const [yssQuote, setYssQuote] = useState(pickFallbackQuote);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (!addModal) return;
+    const onKey = (e) => { if (e.key === "Escape") closeAddModal(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [addModal]);
 
   useEffect(() => {
     Promise.all([
@@ -1328,50 +1332,77 @@ export default function App() {
 
   const renderModals = () => (
     <>
-      {addModal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:isMobile?"flex-end":"center",justifyContent:"center",zIndex:1000}} onClick={()=>setAddModal(false)}>
-          <div style={{background:T.modal,borderRadius:isMobile?"16px 16px 0 0":16,border:`1px solid ${T.goldB}`,padding:24,width:"100%",maxWidth:440,boxShadow:"0 24px 48px rgba(0,0,0,0.5)"}} onClick={e=>e.stopPropagation()}>
-            {isMobile&&<div style={{width:36,height:4,borderRadius:2,background:T.borderS,margin:"0 auto 20px"}}/>}
-            <h3 style={{margin:"0 0 20px",fontSize:18,fontWeight:700,fontFamily:"'Playfair Display',serif",color:T.gold}}>New Task</h3>
-            <input autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addTask();if(e.key==="Escape")setAddModal(false);}} placeholder="Task name..." style={{...inp,fontSize:15,padding:"12px 16px",marginBottom:14}}/>
-            <div style={{display:"grid",gridTemplateColumns:newDateRange?"1fr 1fr":"1fr 1fr 1fr",gap:12,marginBottom:newDateRange?12:20}}>
-              {[
-                {label:"Priority",content:<select value={newPrio} onChange={e=>setNewPrio(Number(e.target.value))} style={inp}>{[1,2,3,4].map(p=><option key={p} value={p}>{PL[p]}</option>)}</select>},
-                ...(newDateRange
-                  ? [{label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>}]
-                  : [
-                    {label:"Due Date",content:<input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/>},
-                    {label:"Project",content:<select value={newProject} onChange={e=>setNewProject(e.target.value)} style={inp}>{sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>},
-                  ]),
-              ].map(({label,content})=>(
-                <div key={label}>
-                  <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{label}</div>
-                  {content}
+      {addModal&&(()=>{
+        const fld={background:"var(--soft)",border:"1px solid var(--hair2)",borderRadius:0,padding:"10px 12px",fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--ink)",width:"100%",outline:"none",boxSizing:"border-box"};
+        const foc={onFocus:e=>e.currentTarget.style.borderColor="var(--accent)",onBlur:e=>e.currentTarget.style.borderColor="var(--hair2)"};
+        const lbl={fontFamily:"'DM Mono', monospace",fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:"var(--muted2)",marginBottom:8};
+        return (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:isMobile?16:0,boxSizing:"border-box"}} onClick={closeAddModal}>
+          <div style={{width:isMobile?"calc(100vw - 32px)":480,background:"var(--card)",borderRadius:0,boxShadow:"0 8px 48px rgba(0,0,0,0.18)",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{padding:"28px 28px 20px",borderBottom:"1px solid var(--hair)",position:"relative"}}>
+              <span style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:400,fontSize:32,color:"var(--title)"}}>New </span>
+              <span style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:400,fontStyle:"italic",fontSize:32,color:"var(--accent)"}}>task.</span>
+              <button onClick={closeAddModal} style={{position:"absolute",top:20,right:20,width:32,height:32,borderRadius:"50%",border:"1px solid var(--hair2)",background:"transparent",color:"var(--muted2)",cursor:"pointer",fontSize:16,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.color="var(--accent)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--muted2)";}}>×</button>
+            </div>
+            {/* Body */}
+            <div style={{padding:"24px 28px 28px",display:"flex",flexDirection:"column",gap:20}}>
+              <input id="ls-add-title" autoFocus value={newTitle} onChange={e=>setNewTitle(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newTitle.trim())addTask();}} placeholder="Task name"
+                style={{width:"100%",padding:"14px 16px",border:"1px solid var(--hair2)",borderRadius:"999px",background:"var(--soft)",fontFamily:"'DM Mono', monospace",fontSize:14,color:"var(--ink)",outline:"none",boxSizing:"border-box"}} {...foc}/>
+              {/* Priority */}
+              <div>
+                <div style={lbl}>Priority</div>
+                <div style={{display:"flex",gap:8}}>
+                  {[1,2,3,4].map(p=>{const sel=newPrio===p;return(
+                    <button key={p} onClick={()=>setNewPrio(p)} style={{flex:1,height:40,borderRadius:"999px",border:"1px solid "+(sel?"var(--pill)":"var(--hair2)"),background:sel?"var(--pill)":"var(--soft)",color:sel?"var(--pillfg)":"var(--ink)",fontFamily:"'DM Mono', monospace",fontSize:12,cursor:"pointer"}}>{PL[p]}</button>
+                  );})}
                 </div>
-              ))}
-            </div>
-            {newDateRange&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-              <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Start Date</div><input type="date" value={newStartDate} onChange={e=>setNewStartDate(e.target.value)} style={inp}/></div>
-              <div><div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>End Date</div><input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={inp}/></div>
-            </div>}
-            <div style={{marginBottom:20}}>
-              <button onClick={()=>{setNewDateRange(!newDateRange);if(!newDateRange)setNewStartDate("");}} style={{background:"none",border:"none",cursor:"pointer",padding:0,fontSize:11,color:T.gold,fontFamily:"'Syne',sans-serif",fontWeight:500}}>
-                {newDateRange?"- Single date":"+ Date range"}
-              </button>
-            </div>
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:10,fontWeight:700,color:T.textMute,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Syne',sans-serif"}}>Repeat</div>
-              <select value={newRecurrence} onChange={e=>setNewRecurrence(e.target.value)} disabled={!newDate} style={{...inp,opacity:newDate?1:0.4}}>
-                {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-              <button onClick={()=>setAddModal(false)} style={{padding:"10px 20px",background:"none",border:"none",color:T.textMute,cursor:"pointer",fontSize:14}}>Cancel</button>
-              <button onClick={addTask} style={{padding:"10px 28px",background:T.forest,border:"none",color:T.bg,borderRadius:100,cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"0.05em",fontFamily:"'Jost', sans-serif"}}>Add Task</button>
+              </div>
+              {/* Due date */}
+              <div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <span style={lbl}>Due Date</span>
+                  <span onClick={()=>{setNewDateRange(!newDateRange);if(!newDateRange)setNewStartDate("");}} style={{fontFamily:"'DM Mono', monospace",fontSize:11,color:"var(--accent)",cursor:"pointer"}}>{newDateRange?"- Date range":"+ Date range"}</span>
+                </div>
+                {newDateRange?(
+                  <div style={{display:"flex",gap:12}}>
+                    <div style={{flex:1}}>
+                      <div style={{...lbl,fontSize:10,marginBottom:6}}>Start Date</div>
+                      <input type="date" value={newStartDate} onChange={e=>setNewStartDate(e.target.value)} style={fld} {...foc}/>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{...lbl,fontSize:10,marginBottom:6}}>End Date</div>
+                      <input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={fld} {...foc}/>
+                    </div>
+                  </div>
+                ):(
+                  <input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} style={fld} {...foc}/>
+                )}
+              </div>
+              {/* Project */}
+              <div>
+                <div style={lbl}>Project</div>
+                <select value={newProject} onChange={e=>setNewProject(e.target.value)} style={fld} {...foc}>
+                  {sortedProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              {/* Repeat */}
+              <div>
+                <div style={lbl}>Repeat</div>
+                <select value={newRecurrence} onChange={e=>setNewRecurrence(e.target.value)} disabled={!newDate} style={{...fld,opacity:newDate?1:0.4}} {...foc}>
+                  {RECURRENCE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              {/* Submit */}
+              <button onClick={()=>{if(!newTitle.trim()){const el=document.getElementById("ls-add-title");if(el)el.focus();return;}addTask();}}
+                style={{marginTop:4,width:"100%",height:50,background:"var(--pill)",color:"var(--pillfg)",border:"none",borderRadius:"999px",fontFamily:"'DM Mono', monospace",fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",cursor:"pointer"}}>Add Task</button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {selectedTask&&isMobile&&renderDetailDrawer(selectedTask,true)}
 
