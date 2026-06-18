@@ -1603,7 +1603,7 @@ export default function App() {
         </div>
 
         {/* Spacer so scroll content clears the sticky footer */}
-        <div style={{height:80,flexShrink:0}}/>
+        <div style={{height:160,flexShrink:0}}/>
 
         {/* Footer */}
         <div style={{padding:"24px 28px",marginTop:"auto",borderTop:"1px solid var(--hair)",flexShrink:0,display:"flex",flexDirection:"column",gap:10}}>
