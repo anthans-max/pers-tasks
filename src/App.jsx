@@ -250,6 +250,18 @@ const CHIP_COLORS = {
 };
 const getChipColors = (family, theme) => CHIP_COLORS[theme]?.[family] ?? CHIP_COLORS.light.slate;
 
+// News source → tag variant
+const getNewsSourceVariant = (source = '') => {
+  const s = source.toLowerCase();
+  if (s.includes('rundown'))    return 'gold';
+  if (s.includes('superhuman')) return 'green';
+  return 'neutral';
+};
+const NEWS_TAG_COLORS = {
+  light:  { gold:{bg:'#f3ead3',color:'#a8843a'}, green:{bg:'#e4ece2',color:'#2f5a40'}, neutral:{bg:'#ebe9e2',color:'#5a5d52'} },
+  dark:   { gold:{bg:'#2a2417',color:'#d8b471'}, green:{bg:'#1a2a20',color:'#9cc4ac'}, neutral:{bg:'#24251f',color:'#b6b3a6'} },
+};
+
 // ─────────────────────────────────────────────────────────────
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -1232,11 +1244,6 @@ export default function App() {
 
   // ── News View ───────────────────────────────────────────────
   const renderNewsView = (padH=16) => {
-    const sourceColors = {
-      "The Rundown AI": { bg: "rgba(181,112,58,0.10)", color: T.gold },
-      "Superhuman AI": { bg: "rgba(74,124,111,0.10)", color: T.email },
-      "TLDR Founders": { bg: "rgba(61,46,30,0.08)", color: T.textSoft },
-    };
     // Group stories by date
     const byDate = {};
     newsSummaries.forEach(s => {
@@ -1244,47 +1251,60 @@ export default function App() {
       byDate[s.storyDate].push(s);
     });
     const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+    const dateEyebrow = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase();
+
+    const header = (
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",padding:isMobile?"24px 16px 14px":"30px 44px 18px",borderBottom:"1px solid var(--hair)"}}>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:300,fontSize:isMobile?38:46,lineHeight:1,color:"var(--title)"}}>News</div>
+          <div style={{fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.12em",color:"var(--muted)",marginTop:8}}>{dateEyebrow}</div>
+        </div>
+        <button onClick={()=>runSync('news')} disabled={!!syncing}
+          style={{display:"flex",alignItems:"center",gap:8,height:46,padding:"0 22px",borderRadius:"999px",border:"none",background:syncing==='news'?"var(--soft)":"var(--pill)",color:syncing==='news'?"var(--muted)":"var(--pillfg)",cursor:syncing?"not-allowed":"pointer",fontFamily:"'DM Mono', monospace",fontSize:12.5,letterSpacing:"0.06em",textTransform:"uppercase",transition:"all 0.15s",flexShrink:0}}>
+          {syncing==='news'
+            ? <><span style={{display:"inline-block",width:12,height:12,border:"2px solid var(--muted)",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Syncing…</>
+            : <>Sync Now</>}
+        </button>
+      </div>
+    );
 
     return (
-      <div style={{padding:`16px ${padH}px`}}>
+      <div>
+        {header}
         {newsSummaries.length === 0 ? (
-          <div style={{textAlign:"center",padding:"60px 20px",color:T.textMute}}>
-            <div style={{fontSize:40,marginBottom:12}}>📰</div>
-            <div style={{fontSize:15,fontWeight:600,color:T.textSoft}}>No news yet</div>
-            <div style={{fontSize:13,marginTop:6}}>Stories from your newsletters will appear here</div>
+          <div style={{padding:"60px 0",textAlign:"center",fontFamily:"'DM Mono', monospace",fontSize:14,color:"var(--muted2)"}}>No news summaries yet — sync to fetch today's briefing. ❋</div>
+        ) : (
+          <div style={{maxWidth:1040,padding:isMobile?"20px 16px 110px":"32px 44px"}}>
+            {dates.map(date => (
+              <div key={date} style={{marginBottom:32}}>
+                <div style={{fontFamily:"'DM Mono', monospace",fontSize:11,letterSpacing:"0.14em",textTransform:"uppercase",color:"var(--muted2)",marginBottom:14}}>
+                  {new Date(date + "T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  {byDate[date].map(item => {
+                    const variant = getNewsSourceVariant(item.source);
+                    const tagColors = NEWS_TAG_COLORS[theme][variant];
+                    const Card = item.url ? "a" : "div";
+                    const cardProps = item.url ? {href:item.url, target:"_blank", rel:"noopener noreferrer"} : {};
+                    return (
+                      <Card key={item.id} {...cardProps}
+                        style={{display:"block",background:"var(--card)",border:"1px solid var(--hair)",borderRadius:0,padding:"24px 26px",transition:"box-shadow 0.2s",textDecoration:"none",color:"inherit",cursor:item.url?"pointer":"default"}}
+                        onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 18px rgba(0,0,0,0.1)";}}
+                        onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,flexWrap:"wrap"}}>
+                          <span style={{background:tagColors.bg,color:tagColors.color,fontFamily:"'DM Mono', monospace",fontSize:10.5,letterSpacing:"0.05em",textTransform:"uppercase",borderRadius:0,padding:"4px 10px"}}>{item.source}</span>
+                          {item.category && <span style={{background:"transparent",border:"1px solid var(--hair2)",color:"var(--muted2)",fontFamily:"'DM Mono', monospace",fontSize:10.5,letterSpacing:"0.05em",textTransform:"uppercase",borderRadius:0,padding:"4px 10px"}}>{item.category}</span>}
+                        </div>
+                        <div style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:500,fontSize:26,lineHeight:1.2,color:"var(--title)",marginBottom:10}}>{item.headline}</div>
+                        <div style={{fontFamily:"'DM Mono', monospace",fontSize:13.5,lineHeight:1.75,color:"var(--muted2)"}}>{item.summary}</div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
-        ) : dates.map(date => (
-          <div key={date} style={{marginBottom:28}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:T.textMute,marginBottom:10}}>
-              {new Date(date + "T00:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {byDate[date].map(story => {
-                const sc = sourceColors[story.source] || { bg: T.surface, color: T.textSoft };
-                return (
-                  <div key={story.id} style={{background:T.bg2,border:`1px solid ${T.borderS}`,borderRadius:12,padding:"14px 16px",transition:"all 0.15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=T.navyDark;}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(61,46,30,0.10)";}}
-                  >
-                    <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8,flexWrap:"wrap"}}>
-                      <span style={{fontSize:11,background:sc.bg,color:sc.color,padding:"2px 8px",borderRadius:8,fontWeight:600}}>{story.source}</span>
-                      <span style={{fontSize:11,background:T.forestPale,color:T.forest,padding:"2px 8px",borderRadius:8,fontWeight:600}}>{story.category}</span>
-                    </div>
-                    {story.url ? (
-                      <a href={story.url} target="_blank" rel="noopener noreferrer" style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6,lineHeight:1.4,display:"block",textDecoration:"none",borderBottom:`1px solid ${T.border}`}}
-                        onMouseEnter={e=>{e.currentTarget.style.color=T.forest;e.currentTarget.style.borderBottomColor=T.forest;}}
-                        onMouseLeave={e=>{e.currentTarget.style.color=T.text;e.currentTarget.style.borderBottomColor=T.border;}}
-                      >{story.headline}</a>
-                    ) : (
-                      <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6,lineHeight:1.4}}>{story.headline}</div>
-                    )}
-                    <div style={{fontSize:13,color:T.textSoft,lineHeight:1.5}}>{story.summary}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        )}
       </div>
     );
   };
@@ -1904,9 +1924,9 @@ export default function App() {
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {renderSidebar()}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:"1px solid var(--hair)"}}>
-          {(view==="tasks"||view==="today") ? renderTasksHeader() : (view==="calendar"||view==="email") ? null : renderMainHeader()}
+          {(view==="tasks"||view==="today") ? renderTasksHeader() : (view==="calendar"||view==="email"||view==="news") ? null : renderMainHeader()}
           {(view==="tasks"||view==="today")&&renderFilterPills(44)}
-          <div style={{flex:1,overflowY:"auto",padding:(view==="calendar"||view==="email")?0:"0 32px 52px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:(view==="calendar"||view==="email"||view==="news")?0:"0 32px 52px"}}>
             {view==="tasks"&&renderFeed(false)}
             {view==="today"&&renderFeed(true)}
             {view==="calendar"&&renderCalendar(0)}
