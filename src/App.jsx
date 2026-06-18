@@ -108,7 +108,7 @@ const I = {
   settings:"M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z",
 };
 
-const Ico = ({ d, size=16, color=T.textSoft, style={} }) => (
+const Ico = ({ d, size=16, color="currentColor", style={} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,...style}}>
     <path d={d}/>
   </svg>
@@ -185,6 +185,37 @@ const useIsMobile = () => {
   return mob;
 };
 
+// ── Theme token layer (CSS custom properties, applied on the root) ──
+const THEMES = {
+  light: {
+    '--canvas':'#f6f3ec','--sidebar':'#11201a','--card':'#ffffff',
+    '--hair':'rgba(0,0,0,0.06)','--hair2':'rgba(0,0,0,0.11)',
+    '--ink':'#22241b','--title':'#1f2118',
+    '--muted':'#8a8f80','--muted2':'#6b6f63',
+    '--accent':'#c4902a','--soft':'#ece9e0',
+    '--pill':'#11201a','--pillfg':'#f0ede6',
+  },
+  dark: {
+    '--canvas':'#0f140f','--sidebar':'#0a120c','--card':'#161c15',
+    '--hair':'rgba(255,255,255,0.07)','--hair2':'rgba(255,255,255,0.13)',
+    '--ink':'#e2dfd5','--title':'#f0ede6',
+    '--muted':'rgba(240,237,230,0.5)','--muted2':'rgba(240,237,230,0.64)',
+    '--accent':'#daa84a','--soft':'#20251e',
+    '--pill':'#27392e','--pillfg':'#f0ede6',
+  },
+};
+const getThemeVars = (t) => THEMES[t] || THEMES.light;
+
+// Sidebar project dot colors by name (falls back to the project's own color)
+const PROJECT_COLORS = {
+  'General': '#c4902a',
+  'Lotus AI': '#4a6fa5',
+  'Sunder Med/Personal': '#c97a3a',
+  'Personal': '#2d5a38',
+  'AaraSaan Consulting': '#7a5a9a',
+  'COEO': '#a8843a',
+};
+
 // ─────────────────────────────────────────────────────────────
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -192,6 +223,20 @@ export default function App() {
   const [emailTasks, setEmailTasks] = useState([]);
   const [newsSummaries, setNewsSummaries] = useState([]);
   const [view, setView] = useState("tasks");
+  const [theme, setTheme] = useState(() => localStorage.getItem('lotus-theme') || 'light');
+  useEffect(() => {
+    localStorage.setItem('lotus-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+  const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light');
+  const isDark = theme === 'dark';
+  // Add-task entry point: focus the inline quick-add bar (Phase 2) when present,
+  // otherwise fall back to the existing add modal so adding still works.
+  const goAdd = () => {
+    const focusQa = () => { const el = document.getElementById('ls-qa-input'); if (el) el.focus(); else setAddModal(true); };
+    if (view !== 'tasks') { setView('tasks'); setDayFilter(null); setTimeout(focusQa, 60); }
+    else focusQa();
+  };
   const [dayFilter, setDayFilter] = useState(null);
   const [projectFilter, setProjectFilter] = useState("all");
   const [selectedTask, setSelectedTask] = useState(null);
@@ -708,84 +753,7 @@ export default function App() {
   };
 
   // ── Shared Components ────────────────────────────────────────
-
-  // Tab button for header navigation
-  const TabBtn = ({ active, onClick, children }) => (
-    <button onClick={onClick} style={{
-      background: active ? "#2d4a35" : "transparent",
-      border: "none",
-      borderRadius: 100,
-      color: active ? "#faf7f2" : "#a89070",
-      padding: "7px 18px",
-      fontSize: "0.62rem",
-      fontWeight: 500,
-      fontFamily: "'Syne', sans-serif",
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      cursor: "pointer",
-      transition: "all 0.15s",
-    }}>{children}</button>
-  );
-
-  // Desktop app header — "LotusList" branding with tab navigation
-  const GoldBar = () => (
-    <div style={{
-      background: "#faf7f2",
-      borderBottom: "1px solid #e0d8ca",
-      padding: "14px 28px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-      gap: 12,
-      position: "sticky",
-      top: 0,
-      zIndex: 100,
-    }}>
-      {/* Brand */}
-      <div>
-        <div style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: "1.25rem",
-          fontWeight: 600,
-          letterSpacing: "0.15em",
-          textTransform: "uppercase",
-          color: "#3d2e1e",
-        }}>
-          Lotus<em style={{ fontStyle: "italic", fontWeight: 400 }}>List</em>
-        </div>
-        <div style={{
-          fontFamily: "'Syne', sans-serif",
-          fontSize: "0.6rem",
-          letterSpacing: "0.15em",
-          textTransform: "uppercase",
-          color: "#a89070",
-          marginTop: 2,
-        }}>Task Manager · 2026</div>
-      </div>
-
-      {/* Tab navigation */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {[{label:"Tasks",key:"tasks"},{label:"Calendar",key:"calendar"},{label:"Emails",key:"email"},{label:"News",key:"news"}].map(({label,key}) => (
-          <TabBtn
-            key={key}
-            active={view === key}
-            onClick={() => setView(key)}
-          >
-            {label}
-          </TabBtn>
-        ))}
-        {/* Finance — external link */}
-        <a href="https://ledger.getlotusai.com" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-          <TabBtn active={false}>Finance</TabBtn>
-        </a>
-        {/* Ops — external link */}
-        <a href="https://ops.getlotusai.com" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-          <TabBtn active={false}>Ops</TabBtn>
-        </a>
-      </div>
-    </div>
-  );
+  // (Top nav GoldBar/TabBtn removed in redesign — sidebar is the sole desktop nav.)
 
   // Footer bar — "Powered by Lotus AI" with logo
   const PoweredFooter = () => (
@@ -1393,74 +1361,71 @@ export default function App() {
   );
 
   // ── Desktop Sidebar ──────────────────────────────────────────
-  const renderSidebar = () => (
-    <div style={{width:248,minWidth:248,background:T.forest,borderRight:"1px solid rgba(255,255,255,0.12)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{padding:"20px 20px 14px",borderBottom:"1px solid rgba(255,255,255,0.12)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-          <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.15)",border:"2px solid rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:14,color:"#fff",flexShrink:0,fontFamily:"'Syne',sans-serif"}}>A</div>
-          <div>
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:"#fff",fontWeight:600}}>Anthan</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:11,color:"rgba(255,255,255,0.55)",letterSpacing:"0.05em"}}>Lotus List</div>
-          </div>
+  const renderSidebar = () => {
+    const navItems = [
+      {key:"tasks",label:"All Tasks",badge:openCount?<span style={{color:"#daa84a",fontSize:12}}>{openCount}</span>:null},
+      {key:"today",label:"Today"},
+      {key:"calendar",label:"Calendar"},
+      {key:"email",label:"Email Capture",badge:emailTasks.length?<span style={{minWidth:20,height:20,padding:"0 5px",borderRadius:"50%",background:"#c4902a",color:"#0c0e0b",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>{emailTasks.length}</span>:null},
+      {key:"news",label:"News"},
+    ];
+    return (
+    <div style={{width:272,minWidth:272,background:"var(--sidebar)",display:"flex",flexDirection:"column",padding:"28px 20px",fontFamily:"'DM Mono', monospace",overflow:"hidden"}}>
+      {/* Wordmark */}
+      <div style={{marginBottom:26}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:27,letterSpacing:"0.05em",color:"#f0ede6",lineHeight:1}}>
+          LOTUS<em style={{fontStyle:"italic",color:"#daa84a"}}>LIST</em>
         </div>
-        <button onClick={()=>{setNewProject(projectFilter==="all"?projects[0]?.id:projectFilter);setAddModal(true);}}
-          style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.25)",borderRadius:100,color:"#fff",fontSize:13,fontWeight:400,letterSpacing:"0.12em",cursor:"pointer",fontFamily:"'Jost', sans-serif",justifyContent:"center"}}>
-          <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.2)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:400,flexShrink:0}}>+</div>
-          Add task
-        </button>
+        <div style={{fontSize:9.5,letterSpacing:"0.18em",color:"rgba(240,237,230,0.45)",marginTop:4}}>TASK MANAGER · 2026</div>
       </div>
 
-      <div style={{padding:"12px 12px 4px",flexShrink:0}}>
-        <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.55)",padding:"0 8px 8px"}}>Views</div>
-        {[
-          {key:"tasks",icon:I.tasks,label:"All Tasks",badge:openCount,badgeBg:"rgba(255,255,255,0.15)",badgeC:"#fff"},
-          {key:"today",icon:I.today,label:"Today",badge:todayCount||null,badgeBg:T.gold,badgeC:"#fff"},
-          {key:"calendar",icon:I.cal,label:"Calendar",badge:null},
-          {key:"email",icon:I.mail,label:"Email Capture",badge:emailTasks.length||null,badgeBg:T.email,badgeC:"#fff"},
-          {key:"news",icon:I.tasks,label:"News",badge:null},
-        ].map(n=>(
-          <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}}
-            style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,cursor:"pointer",fontSize:13,marginBottom:1,fontWeight:view===n.key?700:400,color:view===n.key?"#fff":"rgba(255,255,255,0.65)",background:view===n.key?"rgba(255,255,255,0.15)":"transparent",border:"none",transition:"all 0.15s"}}
-            onMouseEnter={e=>{if(view!==n.key){e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color="#fff";}}}
-            onMouseLeave={e=>{if(view!==n.key){e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.65)";}}}
-          >
-            <Ico d={n.icon} size={16} color={view===n.key?"#fff":"rgba(255,255,255,0.55)"}/>
-            <span style={{flex:1}}>{n.label}</span>
-            {n.badge?<span style={{fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:10,background:n.badgeBg,color:n.badgeC}}>{n.badge}</span>:null}
-          </div>
-        ))}
+      {/* Profile chip */}
+      <div style={{display:"flex",alignItems:"center",gap:12,padding:"11px 12px",border:"1px solid rgba(255,255,255,0.1)",marginBottom:18}}>
+        <div style={{width:38,height:38,borderRadius:"50%",border:"1px solid #daa84a",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Cormorant Garamond',serif",fontSize:19,color:"#daa84a",flexShrink:0}}>A</div>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:"#f0ede6",lineHeight:1.15}}>Anthan</div>
+          <div style={{fontSize:9.5,letterSpacing:"0.1em",color:"rgba(240,237,230,0.45)"}}>LOTUS LIST</div>
+        </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",padding:"8px 12px",borderTop:"1px solid rgba(255,255,255,0.12)",marginTop:6}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 8px 8px"}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.55)"}}>Projects</div>
-          <button onClick={()=>{setModalName("");setShowProjectModal(true);}} style={{background:"none",border:"none",cursor:"pointer",padding:2,opacity:0.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>
-            <Ico d={I.plus} size={14} color="#fff"/>
-          </button>
-        </div>
-        {sortedProjects.map(p=>{
-          const active=projectFilter===p.id&&view==="tasks";
+      {/* Add task */}
+      <button onClick={goAdd} style={{width:"100%",height:52,background:"var(--accent)",color:"#0c0e0b",border:"none",borderRadius:0,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:"0.08em",cursor:"pointer",marginBottom:26}}>＋ Add task</button>
+
+      {/* VIEWS */}
+      <div style={{fontSize:10,letterSpacing:"0.2em",color:"rgba(240,237,230,0.4)",marginBottom:10}}>VIEWS</div>
+      <div style={{display:"flex",flexDirection:"column",gap:2,marginBottom:24}}>
+        {navItems.map(n=>{
+          const act=view===n.key;
           return (
-            <div key={p.id} onClick={()=>{setProjectFilter(p.id);setView("tasks");}}
-              style={{display:"flex",alignItems:"center",gap:9,padding:"7px 10px",borderRadius:8,cursor:"pointer",fontSize:13,marginBottom:1,fontWeight:active?700:400,color:active?"#fff":"rgba(255,255,255,0.65)",background:active?"rgba(255,255,255,0.15)":"transparent",transition:"all 0.15s"}}
-              onMouseEnter={e=>{if(!active){e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color="#fff";}}}
-              onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.65)";}}}
-            >
-              <div style={{width:8,height:8,borderRadius:"50%",background:p.color||T.gold,flexShrink:0}}/>
-              <span style={{flex:1}}>{p.name}</span>
-              <span style={{fontSize:11,color:"rgba(255,255,255,0.45)"}}>{tasks.filter(t=>!t.completed&&t.projectId===p.id).length}</span>
-            </div>
+            <button key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}}
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 12px",border:"none",borderRadius:0,cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:14,background:act?"rgba(196,144,42,0.18)":"transparent",color:act?"#f0ede6":"rgba(240,237,230,0.72)"}}>
+              <span>{n.label}</span>
+              {n.badge||null}
+            </button>
           );
         })}
       </div>
 
-      <div style={{padding:"10px 16px",borderTop:"1px solid rgba(255,255,255,0.12)",display:"flex",gap:8}}>
-        <button title="Settings" style={{flex:1,padding:8,borderRadius:8,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <Ico d={I.settings} size={15} color="rgba(255,255,255,0.55)"/>
-        </button>
+      {/* PROJECTS */}
+      <div style={{fontSize:10,letterSpacing:"0.2em",color:"rgba(240,237,230,0.4)",marginBottom:10}}>PROJECTS</div>
+      <div style={{display:"flex",flexDirection:"column",gap:1,flex:1,minHeight:0,overflowY:"auto"}}>
+        {sortedProjects.map(p=>(
+          <div key={p.id} onClick={()=>{setProjectFilter(p.id);setView("tasks");setDayFilter(null);}}
+            style={{display:"flex",alignItems:"center",gap:11,padding:"9px 12px",cursor:"pointer"}}>
+            <div style={{width:8,height:8,borderRadius:"50%",background:PROJECT_COLORS[p.name]||p.color||"#c4902a",flexShrink:0}}/>
+            <span style={{flex:1,fontSize:13.5,color:"rgba(240,237,230,0.78)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
+            <span style={{fontSize:11,color:"rgba(240,237,230,0.4)"}}>{tasks.filter(t=>!t.completed&&t.projectId===p.id).length}</span>
+          </div>
+        ))}
       </div>
+
+      {/* Theme toggle */}
+      <button onClick={toggleTheme} style={{height:42,background:"transparent",border:"1px solid rgba(255,255,255,0.16)",borderRadius:0,fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(240,237,230,0.78)",marginTop:14,cursor:"pointer"}}>
+        {isDark?"☀  Light mode":"☾  Dark mode"}
+      </button>
     </div>
-  );
+    );
+  };
 
   // ── Desktop Detail Panel ─────────────────────────────────────
   const renderDetailPanel = () => {
@@ -1590,30 +1555,29 @@ export default function App() {
   };
 
   // ── Mobile Top Bar ───────────────────────────────────────────
-  const renderTopBar = () => (
-    <div style={{padding:"0 20px",height:54,background:T.bg,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
-      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.25rem",fontWeight:600,letterSpacing:"0.15em",textTransform:"uppercase",color:T.text,display:"flex",alignItems:"baseline",gap:1}}>
-        Lotus<em style={{fontStyle:"italic",color:T.forestMid}}>List</em>
+  const renderTopBar = () => {
+    const titles = {tasks:"All Tasks",today:"Today",calendar:"Calendar",email:"Email Capture",news:"News"};
+    const sub = view==="email"
+      ? `${emailTasks.length} TO TRIAGE`
+      : new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase();
+    return (
+      <div style={{background:"var(--sidebar)",padding:"18px 20px 14px",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:500,fontSize:24,letterSpacing:"0.04em",color:"#f0ede6"}}>
+            LOTUS<em style={{fontStyle:"italic",color:"#daa84a"}}>LIST</em>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={toggleTheme} style={{width:40,height:40,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"#daa84a",fontSize:16,cursor:"pointer"}}>{isDark?"☀":"☾"}</button>
+            <div style={{width:40,height:40,borderRadius:"50%",border:"1px solid #daa84a",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:"#daa84a"}}>A</div>
+          </div>
+        </div>
+        <div style={{marginTop:14}}>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:300,fontSize:32,color:"#f0ede6",lineHeight:1}}>{titles[view]||"All Tasks"}</div>
+          <div style={{fontFamily:"'DM Mono', monospace",fontSize:11,letterSpacing:"0.1em",color:"rgba(240,237,230,0.55)",marginTop:6}}>{sub}</div>
+        </div>
       </div>
-      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <button onClick={()=>setView("email")} style={{position:"relative",width:36,height:36,borderRadius:"50%",background:T.forestPale,border:`1px solid rgba(45,74,53,0.25)`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:15}}>
-          ✉️
-          {emailTasks.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:T.red,color:"#fff",fontSize:9,fontWeight:700,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{emailTasks.length}</span>}
-        </button>
-        <button onClick={()=>setAddModal(true)} style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:20,color:T.bg,fontWeight:700,lineHeight:1}}>+</button>
-        {(view==="calendar"||view==="email"||view==="news")&&(
-          <button onClick={()=>runSync(view==="email"?"email":view==="news"?"news":"calendar")} disabled={!!syncing}
-            style={{width:36,height:36,borderRadius:"50%",background:T.forest,border:`2px solid ${T.forestMid}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:syncing?"not-allowed":"pointer",padding:0}}>
-            {syncing===(view==="email"?"email":view==="news"?"news":"calendar") ? (
-              <span style={{display:"inline-block",width:14,height:14,border:`2px solid ${T.bg}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-            ) : (
-              <Ico d={I.recur} size={16} color={T.bg}/>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderSummaryCard = () => (
     <div style={{margin:"14px 16px 0",background:`linear-gradient(135deg,${T.navy},${T.navyMid})`,border:`1px solid ${T.border}`,borderRadius:14,padding:16,display:"flex",position:"relative",overflow:"hidden"}}>
@@ -1627,17 +1591,27 @@ export default function App() {
     </div>
   );
 
-  const renderBottomNav = () => (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:T.forest,borderTop:"1px solid rgba(255,255,255,0.15)",display:"grid",gridTemplateColumns:"repeat(5,1fr)",padding:"10px 0 22px",backdropFilter:"blur(20px)",zIndex:100}}>
-      {[{key:"tasks",ico:I.tasks,label:"Tasks"},{key:"today",ico:I.today,label:"Today"},{key:"calendar",ico:I.cal,label:"Calendar"},{key:"email",ico:I.mail,label:"Email"},{key:"news",ico:I.tasks,label:"News"}].map(n=>(
-        <div key={n.key} onClick={()=>{setView(n.key);setDayFilter(null);}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}}>
-          <Ico d={n.ico} size={20} color={view===n.key?"#fff":"rgba(255,255,255,0.55)"}/>
-          <span style={{fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:view===n.key?700:500,letterSpacing:"0.5px",textTransform:"uppercase",color:view===n.key?"#fff":"rgba(255,255,255,0.55)"}}>{n.label}</span>
-          {view===n.key&&<div style={{width:4,height:4,borderRadius:"50%",background:"#fff",marginTop:1}}/>}
-        </div>
-      ))}
-    </div>
-  );
+  const renderBottomNav = () => {
+    const tabs = [
+      {key:"tasks",label:"Tasks",icon:"☰"},
+      {key:"calendar",label:"Calendar",icon:"▦"},
+      {fab:true},
+      {key:"news",label:"News",icon:"▤"},
+      {key:"email",label:"Inbox",icon:"✉"},
+    ];
+    return (
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,height:84,background:"var(--card)",borderTop:"1px solid var(--hair2)",display:"flex",alignItems:"center",justifyContent:"space-around",padding:"0 10px 14px",zIndex:100}}>
+        {tabs.map((t,i)=> t.fab ? (
+          <button key="fab" onClick={goAdd} style={{width:56,height:56,borderRadius:"50%",background:"var(--accent)",color:"#0c0e0b",border:"none",fontSize:28,lineHeight:1,marginTop:-22,cursor:"pointer",boxShadow:"0 6px 18px rgba(196,144,42,0.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>＋</button>
+        ) : (
+          <div key={t.key} onClick={()=>{setView(t.key);setDayFilter(null);}} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer"}}>
+            <span style={{fontSize:18,lineHeight:1,color:view===t.key?"var(--accent)":"var(--muted2)"}}>{t.icon}</span>
+            <span style={{fontFamily:"'DM Mono', monospace",fontSize:10,color:view===t.key?"var(--accent)":"var(--muted2)"}}>{t.label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // ── QUICK ADD (standalone /quick-add route — never shows the splash) ──
   if (isQuickAdd) {
@@ -1813,11 +1787,10 @@ export default function App() {
   }
 
   // ── RENDER ───────────────────────────────────────────────────
-  const base = {color:T.text,fontFamily:"'Jost', sans-serif",fontSize:14,background:T.bg};
+  const base = {color:'var(--ink)',fontFamily:"'Jost', sans-serif",fontSize:14,background:'var(--canvas)'};
 
   if (!isMobile) return (
-    <div style={{...base,display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden"}}>
-      <GoldBar/>
+    <div style={{...getThemeVars(theme),...base,fontFamily:"'DM Mono', monospace",background:'var(--canvas)',display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden"}}>
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {renderSidebar()}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:`1px solid ${T.borderS}`}}>
@@ -1836,15 +1809,15 @@ export default function App() {
       </div>
       <PoweredFooter/>
       {renderModals()}
-      {syncToast&&<div style={{position:"fixed",bottom:48,left:"50%",transform:"translateX(-50%)",background:syncToast.isError?"#B94040":T.forest,color:"#fff",padding:"10px 20px",borderRadius:10,fontSize:13,fontFamily:"'Jost',sans-serif",fontWeight:500,zIndex:1100,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",animation:"fadeIn 0.2s ease"}}>{syncToast.message}</div>}
+      {syncToast&&<div style={{position:"fixed",bottom:48,left:"50%",transform:"translateX(-50%)",background:syncToast.isError?"#B94040":"var(--pill)",color:syncToast.isError?"#fff":"var(--pillfg)",padding:"10px 20px",borderRadius:10,fontSize:13,fontFamily:"'Jost',sans-serif",fontWeight:500,zIndex:1100,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",animation:"fadeIn 0.2s ease"}}>{syncToast.message}</div>}
     </div>
   );
 
   return (
-    <div style={{...base,maxWidth:430,margin:"0 auto",height:"100dvh",overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start"}}>
+    <div style={{...getThemeVars(theme),...base,fontFamily:"'DM Mono', monospace",background:'var(--canvas)',maxWidth:430,margin:"0 auto",height:"100dvh",overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"stretch",justifyContent:"flex-start"}}>
       {renderTopBar()}
       {(view==="tasks"||view==="today")&&renderWeekStrip(false)}
-      <div style={{flex:1,overflowY:"auto",paddingBottom:80}}>
+      <div style={{flex:1,overflowY:"auto",paddingBottom:100}}>
         {(view==="tasks"||view==="today")&&renderSummaryCard()}
         {(view==="tasks"||view==="today")&&renderFilterPills(16)}
         {view==="tasks"&&<div style={{padding:"0 16px"}}>{renderFeed(false)}</div>}
@@ -1855,7 +1828,7 @@ export default function App() {
       </div>
       {renderBottomNav()}
       {renderModals()}
-      {syncToast&&<div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:syncToast.isError?"#B94040":T.forest,color:"#fff",padding:"10px 20px",borderRadius:10,fontSize:13,fontFamily:"'Jost',sans-serif",fontWeight:500,zIndex:1100,boxShadow:"0 4px 16px rgba(0,0,0,0.2)"}}>{syncToast.message}</div>}
+      {syncToast&&<div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:syncToast.isError?"#B94040":"var(--pill)",color:syncToast.isError?"#fff":"var(--pillfg)",padding:"10px 20px",borderRadius:10,fontSize:13,fontFamily:"'Jost',sans-serif",fontWeight:500,zIndex:1100,boxShadow:"0 4px 16px rgba(0,0,0,0.2)"}}>{syncToast.message}</div>}
     </div>
   );
 }

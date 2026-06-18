@@ -5,4 +5,5 @@ dist
 .env*.local
 .vercel
 
-design/quickadd.html
+# Large design reference mockups (keep the .md docs, not the bulky HTML bundles)
+design/*.html
