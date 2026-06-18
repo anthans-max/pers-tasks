@@ -199,7 +199,7 @@ export default function App() {
   const [newDate, setNewDate] = useState("");
   const [newStartDate, setNewStartDate] = useState("");
   const [newDateRange, setNewDateRange] = useState(false);
-  const [newProject, setNewProject] = useState("lotus");
+  const [newProject, setNewProject] = useState("general");
   const [newRecurrence, setNewRecurrence] = useState("");
   const [assigningEmail, setAssigningEmail] = useState(null);
   const [selectedEmails, setSelectedEmails] = useState(new Set());
