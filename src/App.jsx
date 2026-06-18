@@ -216,6 +216,40 @@ const PROJECT_COLORS = {
   'COEO': '#a8843a',
 };
 
+// Calendar event → semantic family (Health / Finance / Shared / Urgent)
+const getEventFamily = (eventType = '', calendarSource = '') => {
+  const t = eventType.toLowerCase();
+  const s = calendarSource.toLowerCase();
+  if (t.includes('birthday') || t.includes('anniversary') || t.includes('payday') ||
+      t.includes('payment') || t.includes('projected'))          return 'gold';
+  if (t.includes('therapy') || t.includes('dental') || t.includes('appointment') ||
+      t.includes('camp') || t.includes('health') || t.includes('piano') ||
+      t.includes('ymca') || t.includes('medical') || t.includes('mammogram') ||
+      t.includes('mixer') || t.includes('outing') || t.includes('reminder'))
+                                                                  return 'green';
+  if (s === 'shared' || t.includes('flight') || t.includes('class') ||
+      t.includes('cleaning') || t.includes('land') || t.includes('foundations'))
+                                                                  return 'slate';
+  if (t === 'urgent')                                             return 'urgent';
+  return 'slate';
+};
+
+const CHIP_COLORS = {
+  light: {
+    green:  { bg:'#e4ece2', border:'#3f7d5a', color:'#2f5a40' },
+    gold:   { bg:'#f3ead3', border:'#c4902a', color:'#8a6312' },
+    slate:  { bg:'#e6e8ea', border:'#6b7785', color:'#46505c' },
+    urgent: { bg:'#f3e0da', border:'#b04a34', color:'#8a3422' },
+  },
+  dark: {
+    green:  { bg:'#1a2a20', border:'#4f8d6a', color:'#9cc4ac' },
+    gold:   { bg:'#2a2417', border:'#c4902a', color:'#d8b471' },
+    slate:  { bg:'#20242a', border:'#7b889a', color:'#aeb6c2' },
+    urgent: { bg:'#2e1d18', border:'#c46a52', color:'#d99b86' },
+  },
+};
+const getChipColors = (family, theme) => CHIP_COLORS[theme]?.[family] ?? CHIP_COLORS.light.slate;
+
 // ─────────────────────────────────────────────────────────────
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -978,87 +1012,144 @@ export default function App() {
     const {daysInMonth,startPad,byDate}=calData, {year,month}=calMonth;
     const now=new Date(); now.setHours(0,0,0,0);
     const tD=now.getDate(),tM=now.getMonth(),tY=now.getFullYear();
+    const isCurMonth = year===tY && month===tM;
     const cells=[...Array(startPad).fill(null),...Array.from({length:daysInMonth},(_,i)=>i+1)];
     while(cells.length%7!==0) cells.push(null);
-    const gcalPill = (t) => {
-      const lower=(t.title||"").toLowerCase();
-      if(lower.includes("birthday")||lower.includes("bday")||lower.includes("anniversary")||lower.includes("anniv")) return {bg:"rgba(181,135,26,0.15)",c:"#8A6310",b:"rgba(181,135,26,0.5)"};
-      if(t.calendarSource==="shared") return {bg:"rgba(123,111,170,0.15)",c:"#4A3F80",b:"rgba(123,111,170,0.5)"};
-      return {bg:"rgba(74,124,111,0.15)",c:"#2A5E54",b:"rgba(74,124,111,0.5)"};
-    };
-    const calEventPill = (t) => {
-      if(t.event_type==="birthday"||t.event_type==="anniversary") return {bg:"rgba(181,135,26,0.15)",c:"#8A6310",b:"rgba(181,135,26,0.5)"};
-      if(t.event_type==="appointment") return {bg:"rgba(74,124,111,0.15)",c:"#2A5E54",b:"rgba(74,124,111,0.5)"};
-      if(t.event_type==="reminder") return {bg:"rgba(185,64,64,0.10)",c:"#B94040",b:"rgba(185,64,64,0.4)"};
-      if(t.calendar_source==="shared") return {bg:"rgba(123,111,170,0.15)",c:"#4A3F80",b:"rgba(123,111,170,0.5)"};
-      return {bg:"rgba(74,124,111,0.10)",c:"#2A5E54",b:"rgba(74,124,111,0.35)"};
-    };
-    return (
-      <div style={{padding:`16px ${padH}px`}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:gcalVisible&&gcalLastSync?8:16,flexWrap:"wrap"}}>
-          <button onClick={()=>setCalMonth(p=>p.month===0?{year:p.year-1,month:11}:{...p,month:p.month-1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevL} size={16} color={T.textSoft}/></button>
-          <div style={{flex:1,textAlign:"center",fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:400,color:T.gold}}>{MONTHS[month]} {year}</div>
-          <button onClick={()=>setCalMonth(p=>p.month===11?{year:p.year+1,month:0}:{...p,month:p.month+1})} style={{background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}><Ico d={I.chevR} size={16} color={T.textSoft}/></button>
-          <button onClick={()=>setCalMonth({year:tY,month:tM})} style={{padding:"6px 12px",background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,color:T.textSoft,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400}}>Today</button>
-          <button onClick={()=>setGcalVisible(p=>!p)} title={gcalVisible?"Hide Google Calendar events":"Show Google Calendar events"}
-            style={{padding:"6px 10px",background:gcalVisible?"rgba(74,124,111,0.15)":"rgba(44,40,32,0.06)",border:`1px solid ${gcalVisible?"rgba(74,124,111,0.45)":T.borderS}`,color:gcalVisible?"#2A5E54":T.textMute,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:400,display:"flex",alignItems:"center",gap:5}}>
-            <Ico d={I.recur} size={12} color={gcalVisible?"#2A5E54":T.textMute}/>
-            GCal
-          </button>
-          <button onClick={()=>setGcalFetchKey(k=>k+1)} disabled={gcalLoading} title="Force-refresh Google Calendar"
-            style={{padding:"6px 8px",background:"rgba(44,40,32,0.06)",border:`1px solid ${T.borderS}`,borderRadius:8,cursor:gcalLoading?"not-allowed":"pointer",display:"flex",alignItems:"center",opacity:gcalLoading?0.5:1}}>
-            <Ico d={I.recur} size={13} color={T.textSoft} style={gcalLoading?{animation:"spin 1s linear infinite"}:{}}/>
-          </button>
+
+    const PRIORITY_FAMILY = {1:'urgent',2:'gold',3:'green',4:'slate'};
+    const familyOf = (t) =>
+        t._gcal     ? getEventFamily(t.title, t.calendarSource)
+      : t._calEvent ? getEventFamily(t.event_type, t.calendar_source)
+      :               (PRIORITY_FAMILY[t.priority] || 'slate');   // local + email tasks
+    const dedup = (arr) => arr.filter((ev,idx,self)=>idx===self.findIndex(e=>e.title===ev.title&&e.dueDate===ev.dueDate));
+
+    const prevMonth = ()=>setCalMonth(p=>p.month===0?{year:p.year-1,month:11}:{...p,month:p.month-1});
+    const nextMonth = ()=>setCalMonth(p=>p.month===11?{year:p.year+1,month:0}:{...p,month:p.month+1});
+    const goToday   = ()=>setCalMonth({year:tY,month:tM});
+    const dateEyebrow = now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase();
+
+    const arrowBtn = (glyph,onClick)=>(
+      <button onClick={onClick}
+        style={{width:42,height:42,borderRadius:"50%",border:"1px solid var(--hair2)",background:"var(--card)",color:"var(--ink)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Mono', monospace",fontSize:18,lineHeight:1,paddingBottom:2,transition:"border-color 0.15s"}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor="var(--accent)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--hair2)"}>{glyph}</button>
+    );
+
+    const header = (
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",padding:isMobile?"24px 16px 14px":"30px 44px 18px",borderBottom:"1px solid var(--hair)"}}>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:300,fontSize:isMobile?38:46,lineHeight:1,color:"var(--title)"}}>Calendar</div>
+          <div style={{fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.12em",color:"var(--muted)",marginTop:8}}>{dateEyebrow}</div>
         </div>
-        {gcalVisible&&gcalLastSync&&(
-          <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:10,fontSize:10,color:T.textMute}}>
-            <span style={{width:5,height:5,borderRadius:"50%",background:"#4A7C6F",display:"inline-block",flexShrink:0}}/>
-            Synced {new Date(gcalLastSync).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
-          </div>
-        )}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,marginBottom:2}}>
-          {DAYS.map(d=><div key={d} style={{padding:"6px 0",fontSize:13,fontWeight:700,color:T.textMute,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px"}}>{d}</div>)}
+        <button onClick={()=>runSync('calendar')} disabled={!!syncing}
+          style={{display:"flex",alignItems:"center",gap:8,height:46,padding:"0 22px",borderRadius:"999px",border:"none",background:syncing==='calendar'?"var(--soft)":"var(--pill)",color:syncing==='calendar'?"var(--muted)":"var(--pillfg)",cursor:syncing?"not-allowed":"pointer",fontFamily:"'DM Mono', monospace",fontSize:12.5,letterSpacing:"0.06em",textTransform:"uppercase",transition:"all 0.15s",flexShrink:0}}>
+          {syncing==='calendar'
+            ? <><span style={{display:"inline-block",width:12,height:12,border:"2px solid var(--muted)",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Syncing…</>
+            : <>Sync Now</>}
+        </button>
+      </div>
+    );
+
+    const monthNav = (
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:isMobile?"16px":"24px 44px 18px"}}>
+        {arrowBtn("‹",prevMonth)}
+        <div style={{fontFamily:"'Cormorant Garamond', serif",fontStyle:"italic",fontSize:30,color:"var(--title)",whiteSpace:"nowrap"}}>{MONTHS[month]} {year}</div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {arrowBtn("›",nextMonth)}
+          <button onClick={goToday}
+            style={{height:42,padding:"0 18px",borderRadius:"999px",border:"1px solid var(--hair2)",background:"var(--card)",color:"var(--ink)",cursor:"pointer",fontFamily:"'DM Mono', monospace",fontSize:12,letterSpacing:"0.05em",textTransform:"uppercase"}}>Today</button>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-          {cells.map((day,i)=>{
-            const isT=day&&year===tY&&month===tM&&day===tD;
-            const isPast=day&&new Date(year,month,day)<now;
-            const dtRaw=day?(byDate[day]||[]):[];
-            const dt=dtRaw.filter((ev,idx,self)=>idx===self.findIndex(e=>e.title===ev.title&&e.dueDate===ev.dueDate));
-            const maxShow=padH>0?3:2;
-            return (
-              <div key={i} style={{minHeight:padH>0?88:70,background:day?"rgba(61,46,30,0.06)":"transparent",border:`1px solid ${day?T.borderS:"transparent"}`,...(isT?{borderTop:`2px solid ${T.forest}`}:{}),borderRadius:8,padding:day?"5px 6px":0,opacity:day?1:0,overflow:"hidden",cursor:day?"pointer":"default"}}
-                onClick={()=>{if(!day)return;const dd=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;setDayFilter(dd);setView("today");}}>
-                {day&&<>
-                  <div style={{fontSize:15,fontWeight:isT?800:600,color:isPast?T.textMute:T.textSoft,marginBottom:3,display:"flex",alignItems:"center",gap:3}}>
-                    {isT?<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background:T.forest,color:"#F4F1EC",fontSize:15,fontWeight:700,lineHeight:1}}>{day}</span>:day}
+      </div>
+    );
+
+    // ── Mobile agenda ──
+    if (isMobile) {
+      const agendaDays=[];
+      for (let d=1; d<=daysInMonth; d++){
+        if (isCurMonth && d<tD) continue;
+        const evs=dedup(byDate[d]||[]);
+        if (evs.length) agendaDays.push({d,evs});
+      }
+      return (
+        <div>
+          {header}
+          {monthNav}
+          <div style={{padding:"16px 16px 110px"}}>
+            {agendaDays.length===0 && (
+              <div style={{fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--muted)",textAlign:"center",padding:"40px 0"}}>Nothing scheduled. ❋</div>
+            )}
+            {agendaDays.map(({d,evs})=>{
+              const isToday=isCurMonth&&d===tD;
+              const wd=DAYS[new Date(year,month,d).getDay()];
+              return (
+                <div key={d} style={{marginBottom:24}}>
+                  <div style={{display:"flex",alignItems:"baseline",gap:12,marginBottom:10}}>
+                    <span style={{fontFamily:"'Cormorant Garamond', serif",fontSize:30,lineHeight:1,color:isToday?"var(--accent)":"var(--title)"}}>{d}</span>
+                    <span style={{fontFamily:"'DM Mono', monospace",fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--muted)"}}>{wd} · {MONTHS[month].slice(0,3)}</span>
+                    {isToday && <span style={{fontFamily:"'DM Mono', monospace",fontSize:9.5,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--pillfg)",background:"var(--pill)",borderRadius:"999px",padding:"2px 9px"}}>Today</span>}
                   </div>
-                  {dt.slice(0,maxShow).map((t,ti)=>{
-                    const p=t._gcal?gcalPill(t):t._calEvent?calEventPill(t):{bg:t._email?T.emailS:PG[t.priority]||"rgba(255,255,255,0.05)",c:t._email?T.email:PC[t.priority]||T.textMute,b:t._email?T.email:PC[t.priority]||T.textMute};
-                    const proj=t._projected;
+                  {evs.map((t,ti)=>{
+                    const c=getChipColors(familyOf(t),theme);
+                    const recur=t._projected||t.recurrence;
+                    const clickable=!t._projected&&!t._gcal&&t.sectionId;
                     return (
-                      <div key={ti} title={t.title+(proj?' (projected)':'')} onClick={(e)=>{if(proj){e.stopPropagation();return;}if(!t._gcal&&t.sectionId)setSelectedTask(t);}}
-                        style={{fontSize:12,padding:"2px 5px",borderRadius:3,marginBottom:2,background:p.bg,color:p.c,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${p.b}`,opacity:proj?0.5:1,borderLeftStyle:proj?'dashed':'solid',cursor:!t._gcal&&!proj&&t.sectionId?"pointer":"default"}}
-                      >{proj?'↻ ':''}{t.title}</div>
+                      <div key={ti} onClick={()=>{if(clickable)setSelectedTask(t);}}
+                        style={{background:"var(--card)",border:"1px solid var(--hair)",borderLeft:`3px solid ${c.border}`,padding:"14px 16px",marginBottom:8,fontFamily:"'DM Mono', monospace",fontSize:15,color:"var(--ink)",cursor:clickable?"pointer":"default"}}>
+                        {recur?'↻ ':''}{t.title}
+                      </div>
                     );
                   })}
-                  {dt.length>maxShow&&<div style={{fontSize:11,color:T.textMute,padding:"1px 5px"}}>+{dt.length-maxShow} more</div>}
-                </>}
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div style={{display:"flex",gap:12,marginTop:14,paddingTop:12,borderTop:`1px solid ${T.borderS}`,flexWrap:"wrap"}}>
-          {[
-            {l:"Urgent",c:PC[1],b:PG[1]},{l:"High",c:PC[2],b:PG[2]},{l:"Medium",c:PC[3],b:PG[3]},{l:"Email",c:T.email,b:T.emailS},
-            ...(gcalVisible?[{l:"GCal",c:"#2A5E54",b:"rgba(74,124,111,0.15)"},{l:"Shared",c:"#4A3F80",b:"rgba(123,111,170,0.15)"},{l:"Birthday",c:"#8A6310",b:"rgba(181,135,26,0.15)"}]:[]),
-          ].map(x=>(
-            <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.textSoft}}>
-              <span style={{width:10,height:10,borderRadius:3,background:x.b,border:`2px solid ${x.c}`}}/>{x.l}
-            </div>
-          ))}
-          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.textSoft,opacity:0.5}}>
-            <span style={{width:10,height:10,borderRadius:3,background:"rgba(61,46,30,0.08)",borderLeft:"2px dashed "+T.textMute}}/>↻ Projected
+      );
+    }
+
+    // ── Desktop grid ──
+    return (
+      <div>
+        {header}
+        {monthNav}
+        <div style={{padding:"0 44px 48px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",borderLeft:"1px solid var(--hair2)",borderTop:"1px solid var(--hair2)"}}>
+            {DAYS.map(d=>(
+              <div key={d} style={{padding:"12px 14px",fontFamily:"'DM Mono', monospace",fontSize:11,letterSpacing:"0.14em",color:"var(--muted2)",textTransform:"uppercase",borderRight:"1px solid var(--hair2)",borderBottom:"1px solid var(--hair2)",background:"var(--soft)"}}>{d.toUpperCase()}</div>
+            ))}
+            {cells.map((day,i)=>{
+              if(!day) return <div key={i} style={{minHeight:124,borderRight:"1px solid var(--hair2)",borderBottom:"1px solid var(--hair2)",background:"var(--soft)",opacity:0.5}}/>;
+              const isT=year===tY&&month===tM&&day===tD;
+              const dt=dedup(byDate[day]||[]);
+              return (
+                <div key={i} onClick={()=>{const dd=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;setDayFilter(dd);setView("today");}}
+                  style={{minHeight:124,background:"var(--card)",borderRight:"1px solid var(--hair2)",borderBottom:"1px solid var(--hair2)",padding:"8px 8px 10px",display:"flex",flexDirection:"column",gap:4,cursor:"pointer",overflow:"hidden"}}>
+                  {isT
+                    ? <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:26,height:26,borderRadius:"50%",background:"var(--pill)",color:"var(--pillfg)",fontFamily:"'DM Mono', monospace",fontSize:12,lineHeight:1,flexShrink:0}}>{day}</span>
+                    : <span style={{fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--muted2)",padding:2}}>{day}</span>}
+                  {dt.slice(0,2).map((t,ti)=>{
+                    const c=getChipColors(familyOf(t),theme);
+                    const proj=t._projected;
+                    const recur=proj||t.recurrence;
+                    return (
+                      <div key={ti} title={t.title+(proj?' (projected)':'')}
+                        onClick={(e)=>{if(proj){e.stopPropagation();return;}if(!t._gcal&&t.sectionId)setSelectedTask(t);}}
+                        style={{fontFamily:"'DM Mono', monospace",fontSize:11,lineHeight:1.35,padding:"3px 7px",borderLeft:`2px solid ${c.border}`,background:c.bg,color:c.color,borderRadius:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",opacity:proj?0.7:1,cursor:!t._gcal&&!proj&&t.sectionId?"pointer":"default"}}>
+                        {recur?'↻ ':''}{t.title}
+                      </div>
+                    );
+                  })}
+                  {dt.length>2&&<div style={{fontFamily:"'DM Mono', monospace",fontSize:10,color:"var(--muted2)",padding:"1px 7px"}}>+{dt.length-2} more</div>}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",gap:22,flexWrap:"wrap",padding:"18px 0 0"}}>
+            {[{f:'green',l:'Health'},{f:'gold',l:'Finance & birthdays'},{f:'slate',l:'Shared / external'},{f:'urgent',l:'Urgent'}].map(x=>(
+              <div key={x.f} style={{display:"flex",alignItems:"center",gap:8,fontFamily:"'DM Mono', monospace",fontSize:11,color:"var(--muted2)"}}>
+                <span style={{width:11,height:11,borderRadius:0,background:getChipColors(x.f,theme).border}}/>{x.l}
+              </div>
+            ))}
+            <div style={{display:"flex",alignItems:"center",gap:8,fontFamily:"'DM Mono', monospace",fontSize:11,color:"var(--muted2)"}}>↻ Projected</div>
           </div>
         </div>
       </div>
@@ -1796,9 +1887,9 @@ export default function App() {
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         {renderSidebar()}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderRight:"1px solid var(--hair)"}}>
-          {(view==="tasks"||view==="today") ? renderTasksHeader() : renderMainHeader()}
+          {(view==="tasks"||view==="today") ? renderTasksHeader() : view==="calendar" ? null : renderMainHeader()}
           {(view==="tasks"||view==="today")&&renderFilterPills(44)}
-          <div style={{flex:1,overflowY:"auto",padding:"0 32px 52px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:view==="calendar"?0:"0 32px 52px"}}>
             {view==="tasks"&&renderFeed(false)}
             {view==="today"&&renderFeed(true)}
             {view==="calendar"&&renderCalendar(0)}
