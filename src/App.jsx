@@ -1410,6 +1410,7 @@ export default function App() {
       <button onClick={toggleTheme} style={{height:42,background:"transparent",border:"1px solid rgba(255,255,255,0.16)",borderRadius:0,fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.05em",color:"rgba(240,237,230,0.78)",marginTop:14,marginBottom:8,cursor:"pointer"}}>
         {isDark?"☀  Light mode":"☾  Dark mode"}
       </button>
+      <div style={{height: '20px', flexShrink: 0}} />
     </div>
     );
   };
