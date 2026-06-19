@@ -567,20 +567,30 @@ export default function App() {
   }, [calMonth,tasks,emailTasks,gcalEvents,gcalVisible,calendarDbEvents]);
 
   // Handlers
-  const addTask = () => {
-    if (!newTitle.trim()) return;
+  const addTask = async () => {
+    if (!newTitle.trim()) {
+      showToast('Please enter a task name', true);
+      return;
+    }
     const sd = newDateRange ? newStartDate : "";
     const ed = newDate;
     const rec = newRecurrence || "";
     const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:ed,startDate:sd&&ed&&sd>ed?ed:sd,subtasks:0,subtasksDone:0,completed:false,fromEmail:false,recurring:!!rec,recurrence:rec,recurringParentId:""};
     setTasks(p=>[...p,newTask]);
     setNewTitle(""); setNewPrio(4); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setNewRecurrence(""); setAddModal(false);
-    supabase.from("tm_tasks").insert({
+    const insertData = {
       id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
       priority:newTask.priority, due_date:newTask.dueDate||null, start_date:newTask.startDate||null, completed:false,
       recurring:!!rec, recurrence:rec||null, recurring_parent_id:null,
       subtasks:0, subtasks_done:0, from_email:false, notes:"",
-    }).then(({error})=>{ if(error) console.error("addTask:", error.message); });
+    };
+    console.log('inserting:', insertData);
+    const { data, error } = await supabase
+      .from("tm_tasks")
+      .insert(insertData)
+      .select();
+    console.log('insert result:', { data, error });
+    if(error){ console.error('insert error', error); showToast('Failed to save task: ' + error.message, true); }
   };
   // Quick-add submit — reuses the exact addTask logic, then re-seeds defaults for rapid repeated adds.
   const handleQuickAdd = () => {
