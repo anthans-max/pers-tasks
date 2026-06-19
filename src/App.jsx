@@ -277,7 +277,7 @@ export default function App() {
   const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light');
   const isDark = theme === 'dark';
   // Add-task entry point: open the New Task modal with a clean form.
-  const resetAddForm = () => { setNewTitle(""); setNewPrio(3); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setNewProject("general"); setNewRecurrence(""); };
+  const resetAddForm = () => { setNewTitle(""); setNewPrio(3); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setNewProject(sortedProjects[0]?.id || ""); setNewRecurrence(""); };
   const goAdd = () => { resetAddForm(); setAddModal(true); };
   const closeAddModal = () => { resetAddForm(); setAddModal(false); };
   const [dayFilter, setDayFilter] = useState(null);
