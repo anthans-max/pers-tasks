@@ -216,6 +216,9 @@ const PROJECT_COLORS = {
   'COEO': '#a8843a',
 };
 
+// Swatch palette for the Manage Projects color picker (drawn from existing project colors)
+const PROJECT_PALETTE = ['#c4902a','#4a6fa5','#c97a3a','#2d5a38','#7a5a9a','#a8843a','#6b8e8e','#c46a6a'];
+
 // Calendar event → semantic family (Health / Finance / Shared / Urgent)
 const getEventFamily = (eventType = '', calendarSource = '') => {
   const t = eventType.toLowerCase();
@@ -309,6 +312,15 @@ export default function App() {
   const [newSubTitle, setNewSubTitle] = useState("");
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalName, setModalName] = useState("");
+  // Manage Projects (CRUD) modal state
+  const [showManageProjects, setShowManageProjects] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editingProjectName, setEditingProjectName] = useState("");
+  const [editingProjectColor, setEditingProjectColor] = useState("");
+  const [deletingProject, setDeletingProject] = useState(null);      // { id, name, color, taskCount }
+  const [deleteReassignTarget, setDeleteReassignTarget] = useState("");
+  const [mpNewName, setMpNewName] = useState("");                     // manage-modal "add" field
+  const [mpNewColor, setMpNewColor] = useState("#c4902a");
   const [showMorning, setShowMorning] = useState(true);
   const [quickAddDone, setQuickAddDone] = useState(false);
   const isQuickAdd = typeof window !== "undefined" && window.location.pathname === "/quick-add";
@@ -769,6 +781,47 @@ export default function App() {
       .then(({error})=>{ if(error) console.error("addProject:", error.message); });
   };
 
+  // ── Manage Projects CRUD ──────────────────────────────────────
+  const mpCreateProject = () => {
+    if(!mpNewName.trim()) return;
+    const id=uid(); const name=mpNewName.trim(); const color=mpNewColor;
+    setProjects(p=>[...p,{id,name,color}]);
+    setMpNewName(""); setMpNewColor("#c4902a");
+    supabase.from("tm_projects").insert({id, user_id:USER_ID, name, color})
+      .then(({error})=>{ if(error) console.error("mpCreateProject:", error.message); });
+  };
+  const updateProject = (id) => {
+    const name=editingProjectName.trim();
+    if(!name) return;
+    const color=editingProjectColor;
+    setProjects(p=>p.map(x=>x.id===id?{...x,name,color}:x));
+    setEditingProjectId(null); setEditingProjectName(""); setEditingProjectColor("");
+    supabase.from("tm_projects").update({name,color}).eq("id",id).eq("user_id",USER_ID)
+      .then(({error})=>{ if(error) console.error("updateProject:", error.message); });
+  };
+  const startDelete = (project) => {
+    const taskCount = tasks.filter(t=>t.projectId===project.id).length;
+    setDeletingProject({...project, taskCount});
+    const fallback = sortedProjects.find(p=>p.name==="General" && p.id!==project.id)
+      || sortedProjects.find(p=>p.id!==project.id);
+    setDeleteReassignTarget(fallback?.id || "");
+  };
+  const confirmDeleteProject = () => {
+    if(!deletingProject) return;
+    const {id, taskCount} = deletingProject;
+    if(taskCount>0){
+      if(!deleteReassignTarget) return;
+      setTasks(ts=>ts.map(t=>t.projectId===id?{...t,projectId:deleteReassignTarget}:t));
+      supabase.from("tm_tasks").update({project_id:deleteReassignTarget}).eq("project_id",id).eq("user_id",USER_ID)
+        .then(({error})=>{ if(error) console.error("confirmDeleteProject reassign:", error.message); });
+    }
+    setProjects(p=>p.filter(x=>x.id!==id));
+    supabase.from("tm_projects").delete().eq("id",id).eq("user_id",USER_ID)
+      .then(({error})=>{ if(error) console.error("confirmDeleteProject:", error.message); });
+    if(projectFilter===id) setProjectFilter("all");
+    setDeletingProject(null); setDeleteReassignTarget("");
+  };
+
   const showToast = (message, isError = false) => {
     setSyncToast({ message, isError });
     setTimeout(() => setSyncToast(null), 4000);
@@ -978,7 +1031,7 @@ export default function App() {
         return (
           <div key={proj.id}>
             <div style={{display:"flex",alignItems:"center",gap:10,margin:"24px 0 10px"}}>
-              <div style={{width:8,height:8,borderRadius:"50%",background:PROJECT_COLORS[proj.name]||proj.color||"#c4902a",flexShrink:0}}/>
+              <div style={{width:8,height:8,borderRadius:"50%",background:proj.color||PROJECT_COLORS[proj.name]||"#c4902a",flexShrink:0}}/>
               <span style={groupLabel}>{proj.name}</span>
               <div style={{flex:1,height:1,background:"var(--hair)"}}/>
               <span style={{fontFamily:"'DM Mono', monospace",fontSize:12,color:"var(--muted2)"}}>{projTasks.length+doneTasks.length}</span>
@@ -1414,6 +1467,98 @@ export default function App() {
         );
       })()}
 
+      {showManageProjects&&(()=>{
+        const foc={onFocus:e=>e.currentTarget.style.borderColor="var(--accent)",onBlur:e=>e.currentTarget.style.borderColor="var(--hair2)"};
+        const lbl={fontFamily:"'DM Mono', monospace",fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:"var(--muted2)",marginBottom:8};
+        const nameInput={width:"100%",padding:"12px 14px",border:"1px solid var(--hair2)",borderRadius:"999px",background:"var(--soft)",fontFamily:"'DM Mono', monospace",fontSize:14,color:"var(--ink)",outline:"none",boxSizing:"border-box"};
+        const iconBtn=(active)=>({width:30,height:30,borderRadius:"50%",border:"1px solid var(--hair2)",background:"transparent",color:active?"var(--muted2)":"var(--hair2)",cursor:active?"pointer":"default",fontSize:13,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0});
+        const Swatch=({value,selected,onPick})=>(
+          <button onClick={()=>onPick(value)} title={value}
+            style={{width:24,height:24,borderRadius:"50%",background:value,cursor:"pointer",flexShrink:0,border:selected?"2px solid var(--accent)":"2px solid transparent",boxShadow:selected?"0 0 0 1px var(--accent)":"none"}}/>
+        );
+        const closeManage=()=>{setShowManageProjects(false);setEditingProjectId(null);setDeletingProject(null);setMpNewName("");setMpNewColor("#c4902a");};
+        return (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:isMobile?16:0,boxSizing:"border-box"}} onClick={closeManage}>
+          <div style={{width:isMobile?"calc(100vw - 32px)":480,maxHeight:"86vh",background:"var(--card)",borderRadius:0,boxShadow:"0 8px 48px rgba(0,0,0,0.18)",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{padding:"28px 28px 20px",borderBottom:"1px solid var(--hair)",position:"relative",flexShrink:0}}>
+              <span style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:400,fontSize:32,color:"var(--title)"}}>Manage </span>
+              <span style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:400,fontStyle:"italic",fontSize:32,color:"var(--accent)"}}>projects.</span>
+              <button onClick={closeManage} style={{position:"absolute",top:20,right:20,width:32,height:32,borderRadius:"50%",border:"1px solid var(--hair2)",background:"transparent",color:"var(--muted2)",cursor:"pointer",fontSize:16,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.color="var(--accent)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--hair2)";e.currentTarget.style.color="var(--muted2)";}}>×</button>
+            </div>
+            {/* Body */}
+            <div style={{padding:"20px 28px 28px",display:"flex",flexDirection:"column",gap:6,overflowY:"auto"}}>
+              {sortedProjects.map(p=>{
+                const isDefault=p.name==="General";
+                if(editingProjectId===p.id) return (
+                  <div key={p.id} style={{display:"flex",flexDirection:"column",gap:10,padding:"12px 0",borderBottom:"1px solid var(--hair)"}}>
+                    <input autoFocus value={editingProjectName} onChange={e=>setEditingProjectName(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter")updateProject(p.id);if(e.key==="Escape")setEditingProjectId(null);}}
+                      placeholder="Project name" style={nameInput} {...foc}/>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {PROJECT_PALETTE.map(c=><Swatch key={c} value={c} selected={editingProjectColor===c} onPick={setEditingProjectColor}/>)}
+                    </div>
+                    <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                      <button onClick={()=>setEditingProjectId(null)} style={{padding:"8px 16px",background:"transparent",border:"1px solid var(--hair2)",borderRadius:"999px",color:"var(--muted2)",fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer"}}>Cancel</button>
+                      <button onClick={()=>updateProject(p.id)} disabled={!editingProjectName.trim()} style={{padding:"8px 20px",background:"var(--pill)",color:"var(--pillfg)",border:"none",borderRadius:"999px",fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",cursor:editingProjectName.trim()?"pointer":"default",opacity:editingProjectName.trim()?1:0.5}}>Save</button>
+                    </div>
+                  </div>
+                );
+                return (
+                  <div key={p.id} style={{display:"flex",alignItems:"center",gap:11,padding:"10px 0",borderBottom:"1px solid var(--hair)"}}>
+                    <div style={{width:9,height:9,borderRadius:"50%",background:p.color||PROJECT_COLORS[p.name]||"#c4902a",flexShrink:0}}/>
+                    <span style={{flex:1,fontSize:14,color:"var(--ink)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
+                    <span style={{fontSize:11,color:"var(--muted2)",background:"var(--soft)",borderRadius:"999px",padding:"2px 9px"}}>{tasks.filter(t=>!t.completed&&t.projectId===p.id).length}</span>
+                    <button title="Edit" onClick={()=>{setEditingProjectId(p.id);setEditingProjectName(p.name);setEditingProjectColor(p.color||PROJECT_COLORS[p.name]||"#c4902a");}}
+                      style={iconBtn(true)} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--accent)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--hair2)"}>✎</button>
+                    <button title={isDefault?"Cannot delete default project":"Delete"} disabled={isDefault} onClick={()=>{if(!isDefault)startDelete(p);}}
+                      style={iconBtn(!isDefault)} onMouseEnter={e=>{if(!isDefault)e.currentTarget.style.borderColor="#B94040";}} onMouseLeave={e=>{if(!isDefault)e.currentTarget.style.borderColor="var(--hair2)";}}>🗑</button>
+                  </div>
+                );
+              })}
+              {/* Add new project */}
+              <div style={{marginTop:16,paddingTop:20,borderTop:"1px solid var(--hair2)",display:"flex",flexDirection:"column",gap:12}}>
+                <div style={lbl}>New Project</div>
+                <input value={mpNewName} onChange={e=>setMpNewName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&mpNewName.trim())mpCreateProject();}} placeholder="Project name" style={nameInput} {...foc}/>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {PROJECT_PALETTE.map(c=><Swatch key={c} value={c} selected={mpNewColor===c} onPick={setMpNewColor}/>)}
+                </div>
+                <button onClick={mpCreateProject} disabled={!mpNewName.trim()}
+                  style={{width:"100%",height:48,background:"var(--pill)",color:"var(--pillfg)",border:"none",borderRadius:"999px",fontFamily:"'DM Mono', monospace",fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",cursor:mpNewName.trim()?"pointer":"default",opacity:mpNewName.trim()?1:0.5}}>Add Project</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Delete confirmation */}
+          {deletingProject&&(
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,padding:isMobile?16:0,boxSizing:"border-box"}} onClick={()=>setDeletingProject(null)}>
+              <div style={{width:isMobile?"calc(100vw - 32px)":400,background:"var(--card)",borderRadius:0,boxShadow:"0 8px 48px rgba(0,0,0,0.24)",padding:"28px",display:"flex",flexDirection:"column",gap:16}} onClick={e=>e.stopPropagation()}>
+                <span style={{fontFamily:"'Cormorant Garamond', serif",fontWeight:400,fontSize:26,color:"var(--title)"}}>Delete <span style={{fontStyle:"italic",color:"var(--accent)"}}>{deletingProject.name}</span>?</span>
+                {deletingProject.taskCount>0?(
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    <span style={{fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--ink)"}}>This project has {deletingProject.taskCount} task{deletingProject.taskCount===1?"":"s"}. Move them to:</span>
+                    <select value={deleteReassignTarget} onChange={e=>setDeleteReassignTarget(e.target.value)}
+                      style={{width:"100%",padding:"11px 14px",border:"1px solid var(--hair2)",borderRadius:0,background:"var(--soft)",fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--ink)",outline:"none",boxSizing:"border-box"}} {...foc}>
+                      {sortedProjects.filter(p=>p.id!==deletingProject.id).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                ):(
+                  <span style={{fontFamily:"'DM Mono', monospace",fontSize:13,color:"var(--muted2)"}}>This project has no tasks.</span>
+                )}
+                <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
+                  <button onClick={()=>setDeletingProject(null)} style={{padding:"9px 18px",background:"transparent",border:"1px solid var(--hair2)",borderRadius:"999px",color:"var(--muted2)",fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",cursor:"pointer"}}>Cancel</button>
+                  <button onClick={confirmDeleteProject} disabled={deletingProject.taskCount>0&&!deleteReassignTarget}
+                    style={{padding:"9px 22px",background:"#B94040",color:"#fff",border:"none",borderRadius:"999px",fontFamily:"'DM Mono', monospace",fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",cursor:(deletingProject.taskCount>0&&!deleteReassignTarget)?"default":"pointer",opacity:(deletingProject.taskCount>0&&!deleteReassignTarget)?0.5:1}}>Delete</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        );
+      })()}
+
       {selectedTask&&isMobile&&renderDetailDrawer(selectedTask,true)}
 
       {assigningEmail&&(
@@ -1487,12 +1632,18 @@ export default function App() {
       </div>
 
       {/* PROJECTS */}
-      <div style={{fontSize:10,letterSpacing:"0.2em",color:"rgba(240,237,230,0.4)",marginBottom:10}}>PROJECTS</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <span style={{fontSize:10,letterSpacing:"0.2em",color:"rgba(240,237,230,0.4)"}}>PROJECTS</span>
+        <button onClick={()=>setShowManageProjects(true)} title="Manage projects"
+          style={{background:"none",border:"none",cursor:"pointer",color:"rgba(240,237,230,0.4)",fontSize:13,padding:"0 2px",lineHeight:1,transition:"color 0.15s"}}
+          onMouseEnter={e=>e.currentTarget.style.color="rgba(240,237,230,0.8)"}
+          onMouseLeave={e=>e.currentTarget.style.color="rgba(240,237,230,0.4)"}>⚙</button>
+      </div>
       <div style={{display:"flex",flexDirection:"column",gap:1,flex:1,minHeight:0,overflowY:"auto"}}>
         {sortedProjects.map(p=>(
           <div key={p.id} onClick={()=>{setProjectFilter(p.id);setView("tasks");setDayFilter(null);}}
             style={{display:"flex",alignItems:"center",gap:11,padding:"9px 12px",cursor:"pointer"}}>
-            <div style={{width:8,height:8,borderRadius:"50%",background:PROJECT_COLORS[p.name]||p.color||"#c4902a",flexShrink:0}}/>
+            <div style={{width:8,height:8,borderRadius:"50%",background:p.color||PROJECT_COLORS[p.name]||"#c4902a",flexShrink:0}}/>
             <span style={{flex:1,fontSize:13.5,color:"rgba(240,237,230,0.78)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
             <span style={{fontSize:11,color:"rgba(240,237,230,0.4)"}}>{tasks.filter(t=>!t.completed&&t.projectId===p.id).length}</span>
           </div>
