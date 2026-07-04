@@ -98,7 +98,7 @@ export default async function handler(req, res) {
       const truncated = body.length > 30000 ? body.slice(0, 30000) : body;
 
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-6",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
         messages: [{
           role: "user",
