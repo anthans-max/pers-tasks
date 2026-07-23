@@ -52,8 +52,9 @@ const RECURRENCE_OPTIONS = [
   { value: "weekly", label: "Weekly" },
   { value: "biweekly", label: "Biweekly" },
   { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
 ];
-const RL = { daily: "Daily", weekly: "Weekly", biweekly: "Biweekly", monthly: "Monthly" };
+const RL = { daily: "Daily", weekly: "Weekly", biweekly: "Biweekly", monthly: "Monthly", yearly: "Yearly" };
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
@@ -89,6 +90,7 @@ const computeNextDate = (dateStr, pattern) => {
     case "weekly":   d.setDate(d.getDate() + 7); break;
     case "biweekly": d.setDate(d.getDate() + 14); break;
     case "monthly":  d.setMonth(d.getMonth() + 1); break;
+    case "yearly":   d.setFullYear(d.getFullYear() + 1); break;
   }
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
