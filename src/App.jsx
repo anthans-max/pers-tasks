@@ -590,7 +590,7 @@ export default function App() {
     const ed = newDate;
     const rec = newRecurrence || "";
     const newTask = {id:uid(),projectId:newProject,title:newTitle.trim(),priority:newPrio,dueDate:ed,startDate:sd&&ed&&sd>ed?ed:sd,subtasks:0,subtasksDone:0,completed:false,fromEmail:false,recurring:!!rec,recurrence:rec,recurringParentId:""};
-    setTasks(p=>[...p,newTask]);
+    setTasks(p=>[newTask,...p]);
     setNewTitle(""); setNewPrio(4); setNewDate(""); setNewStartDate(""); setNewDateRange(false); setNewRecurrence(""); setAddModal(false);
     const insertData = {
       id:newTask.id, user_id:USER_ID, project_id:newTask.projectId, title:newTask.title,
