@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CDMX Family Trip — Aug 3–8, 2026</title>
+<title>Mexico City Trip</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -348,7 +348,7 @@
     color:#fff;
   }
 
-  /* ---------- Tips sheet ---------- */
+  /* ---------- Tips / Packing sheets ---------- */
   .tips-fab{
     position:fixed;
     right:16px;
@@ -367,6 +367,67 @@
     align-items:center;
     gap:6px;
     cursor:pointer;
+  }
+  .pack-fab{
+    bottom: calc(70px + var(--safe-bottom));
+    background:var(--talavera);
+  }
+  .person-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .person-tab{
+    flex:0 0 auto;
+    padding:7px 13px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    background:var(--sand);
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .person-tab.active{
+    background:var(--talavera);
+    border-color:var(--talavera);
+    color:#fff;
+  }
+  .pack-list{list-style:none;padding:0;margin:0;}
+  .pack-item{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pack-item:last-child{border-bottom:none;}
+  .pack-check{
+    flex-shrink:0;
+    width:19px;height:19px;
+    border-radius:6px;
+    border:1.5px solid var(--talavera);
+    margin-top:1px;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;
+    font-size:12px;
+  }
+  .pack-item.packed .pack-check{background:var(--verde);border-color:var(--verde);}
+  .pack-item.packed span.pack-label{text-decoration:line-through;color:var(--ink-soft);}
+  .pack-note{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    background:#FFF8EA;
+    border:1px dashed var(--marigold);
+    border-radius:10px;
+    padding:9px 11px;
+    margin-bottom:14px;
+    line-height:1.5;
   }
   .sheet-backdrop{
     position:fixed;inset:0;
@@ -428,8 +489,10 @@
 
 <main id="main"></main>
 
+<button class="tips-fab pack-fab" id="packFab">🎒 Packing list</button>
 <button class="tips-fab" id="tipsFab">✦ Trip tips</button>
 <div class="sheet-backdrop" id="backdrop"></div>
+
 <div class="sheet" id="tipsSheet">
   <h2>Before you go each day</h2>
   <ul>
@@ -438,6 +501,14 @@
     <li><b>Getting around.</b> Reforma and Zona Rosa are very walkable from the hotel. Everything else — Chapultepec, Centro, Coyoacán, Teotihuacán — is a quick, inexpensive Uber.</li>
   </ul>
   <button class="sheet-close" id="tipsClose">Close</button>
+</div>
+
+<div class="sheet" id="packSheet">
+  <h2>Packing list</h2>
+  <p class="pack-note">CDMX sits at ~7,350 ft — mild fatigue or shortness of breath on day one is normal, so keep water handy. August is rainy season: mornings and evenings are usually clear, with brief afternoon showers.</p>
+  <div class="person-tabs" id="personTabs"></div>
+  <ul class="pack-list" id="packListEl"></ul>
+  <button class="sheet-close" id="packClose">Close</button>
 </div>
 
 <script>
@@ -737,23 +808,125 @@ function renderMain(){
   });
 }
 
-/* ===================== TIPS SHEET ===================== */
-const sheet = document.getElementById('tipsSheet');
+/* ===================== SHEETS (tips + packing) ===================== */
 const backdrop = document.getElementById('backdrop');
-document.getElementById('tipsFab').addEventListener('click', ()=>{
-  sheet.classList.add('show'); backdrop.classList.add('show');
-});
-function closeSheet(){ sheet.classList.remove('show'); backdrop.classList.remove('show'); }
-document.getElementById('tipsClose').addEventListener('click', closeSheet);
-backdrop.addEventListener('click', closeSheet);
+const tipsSheetEl = document.getElementById('tipsSheet');
+const packSheetEl = document.getElementById('packSheet');
+function openSheet(el){ el.classList.add('show'); backdrop.classList.add('show'); }
+function closeSheets(){
+  tipsSheetEl.classList.remove('show');
+  packSheetEl.classList.remove('show');
+  backdrop.classList.remove('show');
+}
+document.getElementById('tipsFab').addEventListener('click', ()=> openSheet(tipsSheetEl));
+document.getElementById('tipsClose').addEventListener('click', closeSheets);
+document.getElementById('packFab').addEventListener('click', ()=>{ openSheet(packSheetEl); renderPackList(); });
+document.getElementById('packClose').addEventListener('click', closeSheets);
+backdrop.addEventListener('click', closeSheets);
+
+/* ===================== PACKING LIST ===================== */
+const packingPeople = [
+  {
+    id:'girl6', label:'6-Year-Old',
+    items:[
+      'Comfortable, broken-in walking shoes',
+      'Sandals (evenings / pool)',
+      'Sun hat',
+      'Kid sunglasses',
+      'Swimsuit',
+      'Light rain jacket or poncho (afternoon showers)',
+      'Light layer for cool mornings / AC',
+      '6 days of outfits + 1 spare',
+      'Pajamas',
+      'Underwear & socks',
+      'Kid-safe sunscreen',
+      'Bug spray',
+      'Reusable water bottle',
+      'Small backpack for her own things',
+      'Travel activity — coloring book, small toy',
+      'Comfort item (stuffed animal)',
+    ]
+  },
+  {
+    id:'girl4', label:'4-Year-Old',
+    items:[
+      'Easy on/off shoes (velcro)',
+      'Sandals (evenings / pool)',
+      'Sun hat',
+      'Kid sunglasses',
+      'Swimsuit',
+      'Light rain jacket or poncho (afternoon showers)',
+      'Light layer for cool mornings / AC',
+      '6 days of outfits + 2 spares (spills happen)',
+      'Pajamas',
+      'Underwear & socks',
+      'Kid-safe sunscreen',
+      'Bug spray',
+      'Reusable water bottle / sippy cup',
+      'Familiar snacks',
+      'Comfort item for naps',
+    ]
+  },
+  {
+    id:'wife', label:'Wife',
+    items:[
+      'Comfortable walking shoes (cobblestones)',
+      'Layered outfits — cool mornings, warm afternoons',
+      'Light rain jacket or compact umbrella',
+      'Sunscreen & sunglasses',
+      'One dressier outfit (farewell lunch at Villa María)',
+      'Crossbody or day bag',
+      'Portable phone charger',
+      'Reusable water bottle',
+      'Personal medications',
+      'Hand sanitizer / wet wipes',
+    ]
+  }
+];
+let activePerson = 0;
+let packing = {};
+
+function renderPersonTabs(){
+  const el = document.getElementById('personTabs');
+  el.innerHTML = packingPeople.map((p,i)=>
+    `<div class="person-tab ${i===activePerson?'active':''}" data-p="${i}">${p.label}</div>`
+  ).join('');
+  el.querySelectorAll('.person-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{ activePerson = parseInt(t.dataset.p,10); renderPackList(); });
+  });
+}
+
+function renderPackList(){
+  renderPersonTabs();
+  const person = packingPeople[activePerson];
+  const listEl = document.getElementById('packListEl');
+  listEl.innerHTML = person.items.map((item,i)=>{
+    const key = person.id + ':' + i;
+    const packed = !!packing[key];
+    return `<li class="pack-item ${packed?'packed':''}" data-key="${key}">
+      <span class="pack-check">${packed?'✓':''}</span>
+      <span class="pack-label">${item}</span>
+    </li>`;
+  }).join('');
+  listEl.querySelectorAll('.pack-item').forEach(li=>{
+    li.addEventListener('click', async ()=>{
+      const key = li.dataset.key;
+      packing[key] = !packing[key];
+      await store.set('packing', packing, true);
+      renderPackList();
+    });
+  });
+}
 
 /* ===================== INIT ===================== */
 (async function init(){
   const savedChecklist = await store.get('checklist', true);
   const savedChoices = await store.get('choices', true);
   const savedDay = await store.get('last-day', false);
+  const savedPacking = await store.get('packing', true);
   if(savedChecklist) checklist = savedChecklist;
   if(savedChoices) choices = savedChoices;
+  if(savedPacking) packing = savedPacking;
 
   const today = todayISO();
   const todayIdx = days.findIndex(d=>d.dateISO===today);
