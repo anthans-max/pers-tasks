@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CDMX Family Trip — Aug 3–8, 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+  :root{
+    --talavera:#1B5E78;
+    --talavera-dark:#123F51;
+    --marigold:#E8A23D;
+    --rosa:#D64D6B;
+    --verde:#5B7F5A;
+    --sand:#F6F1E6;
+    --sand-deep:#EDE4D2;
+    --ink:#20262A;
+    --ink-soft:#5B6469;
+    --card:#FFFFFF;
+    --line:#E3D9C4;
+    --radius:16px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--sand);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom: calc(28px + var(--safe-bottom));
+  }
+  .mono{font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ---------- Bunting / papel picado divider (signature element) ---------- */
+  .bunting{
+    display:flex;
+    height:14px;
+    overflow:hidden;
+    width:100%;
+  }
+  .bunting span{
+    flex:1 0 22px;
+    height:14px;
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    margin-right:3px;
+  }
+  .bunting span:nth-child(4n+1){background:var(--rosa);}
+  .bunting span:nth-child(4n+2){background:var(--marigold);}
+  .bunting span:nth-child(4n+3){background:var(--talavera);}
+  .bunting span:nth-child(4n+4){background:var(--verde);}
+
+  /* ---------- Header ---------- */
+  header{
+    background:var(--talavera-dark);
+    color:#fff;
+    padding: calc(18px + var(--safe-top)) 18px 16px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--marigold);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Space Grotesk','Inter',sans-serif;
+    font-weight:700;
+    font-size:26px;
+    line-height:1.15;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .subhead{
+    font-size:13.5px;
+    color:#CFE0E7;
+    margin:0;
+  }
+
+  /* ---------- Day nav ---------- */
+  nav.days{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--sand);
+    border-bottom:1px solid var(--line);
+    padding:10px 12px 0;
+  }
+  .day-scroll{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:10px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .day-scroll::-webkit-scrollbar{display:none;}
+  .day-pill{
+    flex:0 0 auto;
+    min-width:64px;
+    text-align:center;
+    padding:8px 12px;
+    border-radius:12px;
+    background:var(--card);
+    border:1px solid var(--line);
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .day-pill .d{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    line-height:1.1;
+  }
+  .day-pill .date{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--ink-soft);
+  }
+  .day-pill.active{
+    background:var(--talavera);
+    border-color:var(--talavera);
+  }
+  .day-pill.active .d{color:#fff;}
+  .day-pill.active .date{color:#CFE0E7;}
+  .day-pill.today::after{
+    content:'today';
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:8.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--marigold);
+    margin-top:2px;
+  }
+  .day-pill.active.today::after{color:#FFD98C;}
+
+  main{padding:16px;max-width:640px;margin:0 auto;}
+
+  .day-panel{display:none;}
+  .day-panel.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .day-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:21px;
+    font-weight:700;
+    margin:14px 0 4px;
+  }
+  .day-desc{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+    line-height:1.5;
+  }
+
+  /* ---------- Route diagram (replaces embedded map — sandbox blocks external map iframes) ---------- */
+  .map-wrap{
+    border-radius:var(--radius);
+    overflow:hidden;
+    border:1px solid var(--line);
+    margin-bottom:14px;
+    background:var(--sand-deep);
+  }
+  .route-diagram{
+    padding:18px 16px 14px;
+  }
+  .route-diagram svg{display:block;width:100%;height:auto;}
+  .route-diagram .stopname{
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    font-weight:600;
+    fill:var(--ink);
+  }
+  .route-diagram .stopnum{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    fill:#fff;
+  }
+  .route-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:12px;
+    background:var(--talavera);
+    color:#fff;
+    text-decoration:none;
+    font-weight:600;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+  }
+  .route-btn:active{background:var(--talavera-dark);}
+
+  /* ---------- Timeline ---------- */
+  .timeline{
+    position:relative;
+    padding-left:2px;
+  }
+  .stop{
+    display:flex;
+    gap:12px;
+    margin-bottom:4px;
+  }
+  .stop .rail{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:16px;
+    flex-shrink:0;
+  }
+  .stop .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--talavera);
+    margin-top:20px;
+    flex-shrink:0;
+    border:2px solid var(--sand);
+    box-shadow:0 0 0 1px var(--line);
+  }
+  .stop.done .dot{background:var(--verde);}
+  .stop .thread{
+    flex:1;
+    width:2px;
+    background:var(--line);
+    margin-top:2px;
+  }
+  .stop:last-child .thread{display:none;}
+
+  .stop-card{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin-bottom:12px;
+  }
+  .stop.done .stop-card{opacity:0.6;}
+  .stop-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .stop-time{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--marigold-text,#B8791F);
+    font-weight:600;
+    margin-bottom:2px;
+    display:block;
+  }
+  .stop-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:15.5px;
+    margin:0 0 3px;
+  }
+  .stop.done .stop-name{text-decoration:line-through;text-decoration-color:var(--verde);}
+  .tag{
+    display:inline-block;
+    font-size:10px;
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    padding:2px 7px;
+    border-radius:20px;
+    background:var(--sand-deep);
+    color:var(--talavera-dark);
+    margin:2px 6px 6px 0;
+  }
+  .rating{
+    font-size:11px;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .stop-note{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.45;
+    margin:4px 0 8px;
+  }
+  .stop-actions{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .btn{
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 12px;
+    border-radius:20px;
+    text-decoration:none;
+    border:1px solid var(--line);
+    color:var(--talavera-dark);
+    background:var(--sand);
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    -webkit-tap-highlight-color:transparent;
+    cursor:pointer;
+  }
+  .btn.check{min-width:96px;justify-content:center;}
+  .stop.done .btn.check{background:var(--verde);color:#fff;border-color:var(--verde);}
+  .btn.map-link{background:var(--talavera-dark);color:#fff;border-color:var(--talavera-dark);}
+
+  /* ---------- Choice toggle (day 2 & 5) ---------- */
+  .choice{
+    border:1px dashed var(--marigold);
+    background:#FFF8EA;
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin:0 0 16px;
+  }
+  .choice-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:#8A5A17;
+    margin:0 0 8px;
+  }
+  .choice-opts{display:flex;gap:8px;}
+  .choice-opt{
+    flex:1;
+    text-align:center;
+    padding:8px 6px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .choice-opt.sel{
+    background:var(--marigold);
+    border-color:var(--marigold);
+    color:#fff;
+  }
+
+  /* ---------- Tips sheet ---------- */
+  .tips-fab{
+    position:fixed;
+    right:16px;
+    bottom: calc(16px + var(--safe-bottom));
+    z-index:30;
+    background:var(--rosa);
+    color:#fff;
+    border:none;
+    border-radius:30px;
+    padding:13px 18px;
+    font-weight:700;
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    box-shadow:0 6px 18px rgba(0,0,0,.18);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    cursor:pointer;
+  }
+  .sheet-backdrop{
+    position:fixed;inset:0;
+    background:rgba(20,20,20,.4);
+    z-index:40;
+    display:none;
+  }
+  .sheet-backdrop.show{display:block;}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;
+    background:var(--card);
+    border-radius:20px 20px 0 0;
+    z-index:41;
+    padding:18px 18px calc(20px + var(--safe-bottom));
+    transform:translateY(100%);
+    transition:transform .25s ease;
+    max-height:78vh;
+    overflow-y:auto;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:19px;margin:0 0 12px;
+  }
+  .sheet ul{padding-left:18px;margin:0 0 4px;}
+  .sheet li{margin-bottom:10px;font-size:13.5px;line-height:1.5;color:var(--ink-soft);}
+  .sheet li b{color:var(--ink);}
+  .sheet-close{
+    display:block;margin:14px auto 0;
+    background:none;border:none;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+
+  .trip-progress{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:right;
+    margin:-6px 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Family trip · Aug 3–8, 2026</p>
+  <h1>Mexico City</h1>
+  <p class="subhead">Based at the Marriott Reforma · 6 days · Zona Rosa, Chapultepec, Centro, Coyoacán &amp; a big day trip</p>
+</header>
+<div class="bunting" id="buntingTop"></div>
+
+<nav class="days">
+  <div class="day-scroll" id="dayScroll"></div>
+</nav>
+
+<main id="main"></main>
+
+<button class="tips-fab" id="tipsFab">✦ Trip tips</button>
+<div class="sheet-backdrop" id="backdrop"></div>
+<div class="sheet" id="tipsSheet">
+  <h2>Before you go each day</h2>
+  <ul>
+    <li><b>Book ahead.</b> Frida Kahlo Museum (La Casa Azul) tickets sell out — get them online in advance. For Teotihuacán, an organized half-day tour with pickup is easier than driving yourself.</li>
+    <li><b>No Mondays here.</b> Tue–Sun works well for this trip — several museums (Chapultepec Castle, Museo Nacional de Antropología, the Zoo, Templo Mayor) are closed on Mondays, and you never hit one.</li>
+    <li><b>Getting around.</b> Reforma and Zona Rosa are very walkable from the hotel. Everything else — Chapultepec, Centro, Coyoacán, Teotihuacán — is a quick, inexpensive Uber.</li>
+  </ul>
+  <button class="sheet-close" id="tipsClose">Close</button>
+</div>
+
+<script>
+/* ===================== DATA ===================== */
+const days = [
+  {
+    id:'d1', num:1, date:'Tue, Aug 3', dateISO:'2026-08-03',
+    title:'Arrival & Zona Rosa',
+    desc:'Keep it light after travel — check in, then an easy walk to the Angel of Independence before an easy first dinner.',
+    mapQuery:'Marriott Reforma Mexico City',
+    stops:[
+      {id:'d1s1', time:'3:00 PM', name:'Mexico City Marriott Reforma Hotel', tag:'Hotel', rating:'4.6 (9,836)', note:'Check in, drop bags.'},
+      {id:'d1s2', time:'5:30 PM', name:'The Angel of Independence', tag:'Landmark', rating:'4.7 (165,307)', note:'10 min walk from hotel — great for photos, especially at dusk.'},
+      {id:'d1s3', time:'7:00 PM', name:'La Casa de Toño en Zona Rosa', tag:'Restaurant', rating:'4.5 (32,592)', note:'Fast, cheap, kid-friendly Mexican classics — easy first dinner, walking distance from the hotel.'},
+    ]
+  },
+  {
+    id:'d2', num:2, date:'Wed, Aug 4', dateISO:'2026-08-04',
+    title:'Chapultepec Park',
+    desc:"CDMX's Central Park — plan a full day here. 15–20 min Uber, or a 30 min walk from the hotel.",
+    mapQuery:'Chapultepec Park Mexico City',
+    stops:[
+      {id:'d2s1', time:'9:00 AM', name:'Chapultepec Castle', tag:'Historic site', note:'Stunning views, easy uphill path — great for kids.'},
+      {id:'d2s2', time:'11:00 AM', name:'Chapultepec Zoo', tag:'Zoo', note:'Free entry, includes an axolotl exhibit.'},
+      {id:'d2s3', time:'1:00 PM', name:'Lunch — park food stalls', tag:'Food', note:'Grab lunch from the stalls in the park, or head just outside.'},
+    ],
+    choice:{
+      key:'day2-afternoon',
+      label:'Afternoon — pick based on kids\' ages',
+      options:[
+        {id:'anthro', label:'Museo de Antropología', stop:{id:'d2s4a', time:'3:00 PM', name:'Museo Nacional de Antropología', tag:'Museum', note:"Excellent but big — 2+ hrs. Better for older kids with the energy left in the day."}},
+        {id:'papalote', label:'Papalote Museo del Niño', stop:{id:'d2s4b', time:'3:00 PM', name:'Papalote Museo del Niño', tag:'Museum', note:'Hands-on children\'s science museum in the same park — consistently one of the best family stops in the city. Better for younger kids.'}}
+      ]
+    }
+  },
+  {
+    id:'d3', num:3, date:'Thu, Aug 5', dateISO:'2026-08-05',
+    title:'Historic Center',
+    desc:'Uber or Metro to the Zócalo — about 20 min from the hotel.',
+    mapQuery:'Zocalo Mexico City',
+    stops:[
+      {id:'d3s1', time:'9:30 AM', name:'Zócalo (Plaza de la Constitución)', tag:'Plaza', note:"Mexico's massive central square."},
+      {id:'d3s2', time:'10:30 AM', name:'Templo Mayor Museum', tag:'Ruins', note:'Aztec ruins right in the middle of the city — genuinely cool for kids.'},
+      {id:'d3s3', time:'12:30 PM', name:'Palacio de Bellas Artes', tag:'Landmark', note:'Architecture + murals — a quick stop.'},
+      {id:'d3s4', time:'1:30 PM', name:'Casa de los Azulejos (Sanborns)', tag:'Restaurant', note:'Historic tiled building, big menu — good for groups.'},
+    ]
+  },
+  {
+    id:'d4', num:4, date:'Fri, Aug 6', dateISO:'2026-08-06',
+    title:'Coyoacán',
+    desc:'About 25–30 min Uber south of the hotel.',
+    mapQuery:'Coyoacan Mexico City',
+    stops:[
+      {id:'d4s1', time:'10:00 AM', name:'Frida Kahlo Museum (La Casa Azul)', tag:'Museum', note:'Book tickets in advance — they sell out.'},
+      {id:'d4s2', time:'12:30 PM', name:'Coyoacán Market', tag:'Market', note:'Lively — food stalls, crafts, great wandering for families.'},
+      {id:'d4s3', time:'2:30 PM', name:'Plaza time & ice cream', tag:'Leisure', note:'This neighborhood alone is worth a relaxed afternoon of plaza time and ice cream.'},
+    ]
+  },
+  {
+    id:'d5', num:5, date:'Sat, Aug 7', dateISO:'2026-08-07',
+    title:'Big Day Trip',
+    desc:'The one big adventure day — pick one option below.',
+    mapQuery:'Teotihuacan Mexico',
+    choice:{
+      key:'day5-trip',
+      label:'Choose the day trip',
+      options:[
+        {id:'teo', label:'Teotihuacán', stop:{id:'d5s1a', time:'7:30 AM', name:'Teotihuacán Pyramids', tag:'Day trip', note:'~1 hr drive. Climbing ancient pyramids is a bucket-list family experience — best done as a half-day tour with guide and transport.'}, mapQuery:'Teotihuacan Mexico'},
+        {id:'xoc', label:'Xochimilco', stop:{id:'d5s1b', time:'9:00 AM', name:'Xochimilco Trajineras', tag:'Day trip', note:'~40 min drive. Colorful boat ride through the canals, mariachi bands float by — very festive, but can run long for young kids.'}, mapQuery:'Xochimilco Mexico City'}
+      ]
+    }
+  },
+  {
+    id:'d6', num:6, date:'Sun, Aug 8', dateISO:'2026-08-08',
+    title:'Departure Day',
+    desc:'Keep it easy — a relaxed final lunch before heading to the airport.',
+    mapQuery:'Polanco Mexico City',
+    stops:[
+      {id:'d6s1', time:'11:00 AM', name:'Walk or Uber to Polanco', tag:'Transit', note:'Short trip from the hotel.'},
+      {id:'d6s2', time:'12:00 PM', name:'Villa María', tag:'Restaurant', note:'Mariachi and a fun atmosphere for a final family lunch.'},
+      {id:'d6s3', time:'2:30 PM', name:'Head to the airport', tag:'Transit', note:'Build in buffer time for Mexico City traffic.'},
+    ]
+  },
+];
+
+/* ===================== STORAGE (shared with your wife) ===================== */
+const store = {
+  async get(key, shared){
+    try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
+    catch(e){ return null; }
+  },
+  async set(key, value, shared){
+    try{ await window.storage.set(key, JSON.stringify(value), shared); }catch(e){}
+  }
+};
+
+let checklist = {};
+let choices = {};
+let activeDay = 0;
+
+/* ===================== BUILD ===================== */
+function buntingRow(count){
+  return Array.from({length:count}).map(()=> '<span></span>').join('');
+}
+document.getElementById('buntingTop').innerHTML = buntingRow(20);
+
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function renderDayNav(){
+  const wrap = document.getElementById('dayScroll');
+  const today = todayISO();
+  wrap.innerHTML = days.map((d,i)=>{
+    const isToday = d.dateISO === today;
+    return `<div class="day-pill ${i===activeDay?'active':''} ${isToday?'today':''}" data-i="${i}">
+      <div class="d">Day ${d.num}</div>
+      <div class="date">${d.date.split(', ')[1]}</div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.day-pill').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      activeDay = parseInt(el.dataset.i,10);
+      store.set('last-day', activeDay, false);
+      renderDayNav();
+      renderMain();
+    });
+  });
+}
+
+function directionsUrl(stops, hotelOrigin){
+  // stops: array of place name strings, in order
+  const enc = s => encodeURIComponent(s + ', Mexico City');
+  if(stops.length === 0) return '#';
+  if(stops.length === 1){
+    return `https://www.google.com/maps/dir/?api=1&destination=${enc(stops[0])}`;
+  }
+  const origin = enc(hotelOrigin || stops[0]);
+  const destination = enc(stops[stops.length-1]);
+  const waypoints = stops.slice(hotelOrigin ? 0 : 1, stops.length-1).map(enc).join('|');
+  let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+  if(waypoints) url += `&waypoints=${waypoints}`;
+  return url;
+}
+
+function singleMapUrl(name){
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(name + ', Mexico City')}`;
+}
+
+function renderStop(s, dayHasChoicePrefix){
+  const done = !!checklist[s.id];
+  return `
+  <div class="stop ${done?'done':''}" data-stop="${s.id}">
+    <div class="rail"><div class="dot"></div><div class="thread"></div></div>
+    <div class="stop-card">
+      <div class="stop-top">
+        <div>
+          <span class="stop-time">${s.time}</span>
+          <p class="stop-name">${s.name}</p>
+        </div>
+      </div>
+      <span class="tag">${s.tag}</span>${s.rating?`<span class="rating">★ ${s.rating}</span>`:''}
+      <p class="stop-note">${s.note}</p>
+      <div class="stop-actions">
+        <button class="btn check" data-check="${s.id}">${done?'✓ Visited':'Mark visited'}</button>
+        <a class="btn map-link" href="${singleMapUrl(s.name)}" target="_blank" rel="noopener">📍 Directions</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderChoice(day){
+  const c = day.choice;
+  const sel = choices[c.key] || c.options[0].id;
+  return `
+  <div class="choice" data-choicekey="${c.key}">
+    <p class="choice-label">${c.label}</p>
+    <div class="choice-opts">
+      ${c.options.map(o=>`<div class="choice-opt ${o.id===sel?'sel':''}" data-opt="${o.id}">${o.label}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function currentStopsForDay(day){
+  let stops = day.stops ? [...day.stops] : [];
+  if(day.choice){
+    const sel = choices[day.choice.key] || day.choice.options[0].id;
+    const opt = day.choice.options.find(o=>o.id===sel) || day.choice.options[0];
+    stops.push(opt.stop);
+  }
+  return stops;
+}
+
+function currentMapQuery(day){
+  if(day.choice){
+    const sel = choices[day.choice.key] || day.choice.options[0].id;
+    const opt = day.choice.options.find(o=>o.id===sel) || day.choice.options[0];
+    if(opt.mapQuery) return opt.mapQuery;
+  }
+  return day.mapQuery;
+}
+
+const PIN_COLORS = ['#1B5E78','#E8A23D','#D64D6B','#5B7F5A','#1B5E78','#E8A23D'];
+
+function wrapLabel(name, maxChars, maxLines){
+  const words = name.split(' ');
+  const lines = [];
+  let cur = '';
+  words.forEach(w=>{
+    if((cur + ' ' + w).trim().length <= maxChars){ cur = (cur + ' ' + w).trim(); }
+    else { if(cur) lines.push(cur); cur = w; }
+  });
+  if(cur) lines.push(cur);
+  if(lines.length > maxLines){
+    lines.length = maxLines;
+    lines[maxLines-1] = lines[maxLines-1].slice(0, maxChars-1) + '…';
+  }
+  return lines;
+}
+
+function buildRouteDiagram(stops){
+  const n = stops.length;
+  const width = 600;
+  const pinY = 46;
+  const marginX = 60;
+  const step = n > 1 ? (width - marginX*2) / (n-1) : 0;
+  const xs = stops.map((s,i)=> n>1 ? marginX + step*i : width/2);
+  const labelMaxChars = n >= 4 ? 12 : 16;
+  const labelLines = stops.map(s=>wrapLabel(s.name, labelMaxChars, 2));
+  const maxLabelLines = Math.max(...labelLines.map(l=>l.length));
+  const height = pinY + 26 + maxLabelLines*14 + 14;
+
+  let path = `M ${xs[0]} ${pinY}`;
+  for(let i=1;i<n;i++) path += ` L ${xs[i]} ${pinY}`;
+
+  const pins = stops.map((s,i)=>`
+    <g>
+      <circle cx="${xs[i]}" cy="${pinY}" r="14" fill="${PIN_COLORS[i%PIN_COLORS.length]}" stroke="#fff" stroke-width="2.5"/>
+      <text x="${xs[i]}" y="${pinY+4}" text-anchor="middle" class="stopnum">${i+1}</text>
+      ${labelLines[i].map((line,li)=>`<text x="${xs[i]}" y="${pinY+30+li*14}" text-anchor="middle" class="stopname">${line}</text>`).join('')}
+    </g>`).join('');
+
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <path d="${path}" stroke="#C9BC9C" stroke-width="2" stroke-dasharray="5,5" fill="none"/>
+    ${pins}
+  </svg>`;
+}
+
+function renderMain(){
+  const day = days[activeDay];
+  const stops = currentStopsForDay(day);
+  const doneCount = stops.filter(s=>checklist[s.id]).length;
+  const hotel = 'Mexico City Marriott Reforma Hotel';
+  const routeUrl = directionsUrl(stops.map(s=>s.name), day.num===1 ? hotel : hotel);
+
+  const html = `
+  <div class="day-panel active">
+    <p class="day-title">Day ${day.num} · ${day.title}</p>
+    <p class="day-desc">${day.desc}</p>
+    ${doneCount>0?`<p class="trip-progress">${doneCount}/${stops.length} stops checked off</p>`:''}
+
+    <div class="map-wrap">
+      <div class="route-diagram">${buildRouteDiagram(stops)}</div>
+      <a class="route-btn" href="${routeUrl}" target="_blank" rel="noopener">🗺️ Open full day route in Maps</a>
+    </div>
+
+    ${day.choice ? renderChoice(day) : ''}
+
+    <div class="timeline">
+      ${stops.map(s=>renderStop(s)).join('')}
+    </div>
+  </div>`;
+  document.getElementById('main').innerHTML = html;
+  document.getElementById('buntingTop') && (document.getElementById('buntingTop').innerHTML = buntingRow(20));
+
+  // bind checklist buttons
+  document.querySelectorAll('[data-check]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.check;
+      checklist[id] = !checklist[id];
+      await store.set('checklist', checklist, true);
+      renderMain();
+    });
+  });
+
+  // bind choice toggles
+  document.querySelectorAll('[data-choicekey]').forEach(wrap=>{
+    const key = wrap.dataset.choicekey;
+    wrap.querySelectorAll('[data-opt]').forEach(opt=>{
+      opt.addEventListener('click', async ()=>{
+        choices[key] = opt.dataset.opt;
+        await store.set('choices', choices, true);
+        renderMain();
+      });
+    });
+  });
+}
+
+/* ===================== TIPS SHEET ===================== */
+const sheet = document.getElementById('tipsSheet');
+const backdrop = document.getElementById('backdrop');
+document.getElementById('tipsFab').addEventListener('click', ()=>{
+  sheet.classList.add('show'); backdrop.classList.add('show');
+});
+function closeSheet(){ sheet.classList.remove('show'); backdrop.classList.remove('show'); }
+document.getElementById('tipsClose').addEventListener('click', closeSheet);
+backdrop.addEventListener('click', closeSheet);
+
+/* ===================== INIT ===================== */
+(async function init(){
+  const savedChecklist = await store.get('checklist', true);
+  const savedChoices = await store.get('choices', true);
+  const savedDay = await store.get('last-day', false);
+  if(savedChecklist) checklist = savedChecklist;
+  if(savedChoices) choices = savedChoices;
+
+  const today = todayISO();
+  const todayIdx = days.findIndex(d=>d.dateISO===today);
+  if(todayIdx >= 0) activeDay = todayIdx;
+  else if(typeof savedDay === 'number' && savedDay >=0 && savedDay < days.length) activeDay = savedDay;
+
+  renderDayNav();
+  renderMain();
+})();
+</script>
+</body>
+</html>
